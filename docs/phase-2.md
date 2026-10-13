@@ -29,10 +29,10 @@ Phase 2 successfully transitions NutriForge from a Phase 1 logic prototype into 
 - `test_create_scanned_product`
 - (All 9 existing Phase 1 deterministic tests remain fully passing).
 
-## Known Limitations
-- The OCR Provider is currently mocked (`MockOCRProvider`). Real Vision-Language Model integration requires an external API key (e.g., Gemini Flash or Cloud Vision).
-- Community products are currently stored in-memory in the `DEMO_PRODUCTS` list. A true persistent database (e.g., PostgreSQL or MongoDB) is required for long-term scalability.
-- Barcode scanning via camera requires HTTPS and `navigator.mediaDevices` browser APIs, which are scaffolded visually but rely on manual typed fallback in the UI for now.
+## Known Limitations & Current Status
+- The OCR Provider is currently explicitly marked and implemented as simulated (`MockOCRProvider`). Live Vision-Language Model integration requires an external API key (e.g., Gemini Flash or Cloud Vision) and will be introduced in the upcoming milestone.
+- Local persistence has been established using SQLAlchemy and SQLite (`nutriforge.db`) for both user profiles and community-scanned products across server restarts. Migration to production PostgreSQL is supported via SQLAlchemy connection configuration.
+- Barcode scanning via camera requires HTTPS and `navigator.mediaDevices` browser APIs, which are scaffolded visually with full support for manual typed input in the UI.
 
 ## Data Assumptions
 - `serving_size_value` and numeric nutrition values must be numeric `float` types. The validation UI enforces numeric inputs.
