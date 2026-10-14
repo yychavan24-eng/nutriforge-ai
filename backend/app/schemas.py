@@ -30,13 +30,13 @@ class ProductBase(BaseModel):
     name: str
     brand: str
     category: str = "General"
-    
+
     # Serving
     serving_size: str = "100g"
     serving_size_value: float = 100.0
     serving_size_unit: str = "g"
     serving_description: str = ""
-    
+
     # Nutrition
     calories: Optional[float] = 0.0
     protein: Optional[float] = 0.0
@@ -48,18 +48,19 @@ class ProductBase(BaseModel):
     trans_fat: Optional[float] = 0.0
     sodium: Optional[float] = 0.0
     fibre: Optional[float] = 0.0
-    
+
     # Metadata
     provenance: Dict[str, ProvenanceInfo] = {}
 
     # Ingredients
     raw_ingredient_text: str = ""
     structured_ingredients: List[IngredientNode] = []
-    
+    ingredient_intelligence: Optional[Dict[str, Any]] = None
+
     # Restrictions/Claims
     allergens: List[str] = []
     claims: List[str] = []
-    
+
     # Regulatory/Evidence
     fssai_information: str = "Awaiting verification"
     evidence: str = "Declared product label."
@@ -128,3 +129,6 @@ class AssistantRequest(BaseModel):
     query: str
     profile: Optional[ProfileData] = None
     context_product_ids: List[str] = []
+
+class IngredientAnalysisRequest(BaseModel):
+    raw_ingredient_text: Optional[str] = ""

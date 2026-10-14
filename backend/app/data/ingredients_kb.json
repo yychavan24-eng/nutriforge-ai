@@ -1,0 +1,513 @@
+{
+  "version": "1.0.0",
+  "registry_name": "NutriForge Curated Ingredient Knowledge Base",
+  "description": "Deterministic, version-controlled reference registry for common packaged food and sports nutrition ingredients.",
+  "ingredients": [
+    {
+      "canonical_name": "Whey Protein Concentrate",
+      "synonyms": [
+        "whey protein concentrate",
+        "wpc",
+        "wpc80",
+        "wpc 80",
+        "whey protein concentrate 80%",
+        "concentrated whey protein",
+        "whey concentrate"
+      ],
+      "category": "Protein Source",
+      "function": "Supplemental dairy protein providing rapid amino acid delivery with intact bioactive peptides and natural milk minerals.",
+      "evidence_summary": "Dairy-derived fast-digesting protein rich in essential and branched-chain amino acids (BCAAs), particularly leucine. Typically 70-80% protein concentration by dry weight.",
+      "fitness_context": "Commonly used post-workout or across meals to support muscle protein synthesis, recovery, and daily protein targets.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 284-1971)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Whey Protein Isolate",
+      "synonyms": [
+        "whey protein isolate",
+        "wpi",
+        "wpi90",
+        "wpi 90",
+        "isolated whey protein",
+        "whey isolate",
+        "microfiltered whey isolate",
+        "cross flow microfiltered whey protein isolate"
+      ],
+      "category": "Protein Source",
+      "function": "High-purity supplemental protein source processed to minimize lactose, carbohydrate, and dietary fat content.",
+      "evidence_summary": "Cross-flow micro-filtered or ion-exchanged whey protein achieving >=90% protein by dry weight with negligible lactose and lipid content.",
+      "fitness_context": "Rapidly absorbed protein source suited for post-workout recovery or athletes on strict caloric/macronutrient limits.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 284-1971)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Milk Protein Concentrate",
+      "synonyms": [
+        "milk protein concentrate",
+        "mpc",
+        "mpc80",
+        "mpc 80",
+        "mpc85",
+        "concentrated milk protein"
+      ],
+      "category": "Protein Source",
+      "function": "Intact dairy protein ingredient preserving the natural 80:20 casein-to-whey ratio of cow milk.",
+      "evidence_summary": "Concentrated from skim milk via ultrafiltration; retains both micellar casein and whey proteins with an intermediate digestion rate.",
+      "fitness_context": "Provides sustained amino acid delivery and high satiety in blended protein supplements and meal replacements.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Milk Protein Isolate",
+      "synonyms": [
+        "milk protein isolate",
+        "mpi",
+        "mpi90",
+        "isolated milk protein"
+      ],
+      "category": "Protein Source",
+      "function": "High-purity intact dairy protein containing >=90% protein on dry basis.",
+      "evidence_summary": "Derived by ultrafiltration and diafiltration of skim milk to remove lactose and minerals while preserving native casein and whey micelles.",
+      "fitness_context": "High-concentration dairy protein offering both fast and slow amino acid kinetics for prolonged anabolic response.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Soy Protein Isolate",
+      "synonyms": [
+        "soy protein isolate",
+        "soya protein isolate",
+        "spi",
+        "isolated soy protein",
+        "isolated soya protein"
+      ],
+      "category": "Protein Source",
+      "function": "Plant-derived protein isolate with high protein density (>=90% dry basis).",
+      "evidence_summary": "Produced from defatted soybean flakes by aqueous extraction and isoelectric precipitation. Provides a complete amino acid profile with a PDCAAS of ~1.0.",
+      "fitness_context": "Vegetarian and vegan supplemental protein source supporting muscle repair, strength, and lean mass accretion.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 175-1989)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Soy Protein Concentrate",
+      "synonyms": [
+        "soy protein concentrate",
+        "soya protein concentrate",
+        "spc",
+        "concentrated soy protein",
+        "concentrated soya protein"
+      ],
+      "category": "Protein Source",
+      "function": "Plant-derived functional protein ingredient containing approximately 65-70% protein.",
+      "evidence_summary": "Prepared from dehulled and defatted soybeans by removing soluble carbohydrates while retaining natural insoluble dietary fiber and proteins.",
+      "fitness_context": "Provides plant-based protein fortifying bars, cereals, and meat-alternative sports foods.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Micellar Casein",
+      "synonyms": [
+        "micellar casein",
+        "casein",
+        "native casein",
+        "milk casein"
+      ],
+      "category": "Protein Source",
+      "function": "Slow-release dairy protein that forms a stable clot or gel in the acidic environment of the stomach.",
+      "evidence_summary": "Separated from milk via microfiltration without chemical precipitation, preserving natural micellar structures for slow gastric emptying (up to 7-8 hours).",
+      "fitness_context": "Widely used as a nighttime or extended-fast protein to provide sustained anti-catabolic amino acid release into the bloodstream.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Calcium Caseinate",
+      "synonyms": [
+        "calcium caseinate",
+        "caseinate",
+        "sodium caseinate",
+        "potassium caseinate"
+      ],
+      "category": "Protein Source",
+      "function": "Soluble casein salt used for protein fortification, emulsification, and heat stability.",
+      "evidence_summary": "Prepared from acid casein curd neutralized with food-grade calcium hydroxide; highly soluble with slow-to-moderate digestion kinetics.",
+      "fitness_context": "Supplies bioavailable calcium and slow-digesting protein in sports nutritional bars and ready-to-drink shakes.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Creatine Monohydrate",
+      "synonyms": [
+        "creatine monohydrate",
+        "creatine",
+        "creapure",
+        "micronized creatine",
+        "micronized creatine monohydrate"
+      ],
+      "category": "Ergogenic Aid / Amino Acid Derivative",
+      "function": "Supplemental cellular energy substrate that increases intramuscular phosphocreatine pools.",
+      "evidence_summary": "Extensively validated dietary supplement. Phosphorylates ADP to regenerate ATP during short-duration, high-intensity anaerobic exercise.",
+      "fitness_context": "Strongly substantiated by sports science literature for increasing maximal strength, power output, training volume, and lean body mass.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (ISSN Position Stand: Creatine)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Maltodextrin",
+      "synonyms": [
+        "maltodextrin",
+        "malto-dextrin",
+        "dextrin",
+        "corn maltodextrin",
+        "tapioca maltodextrin"
+      ],
+      "category": "Carbohydrate / Bulking Agent",
+      "function": "Nonsweet or mildly sweet polysaccharide carbohydrate hydrolysate used for rapid energy, bulking, and mouthfeel.",
+      "evidence_summary": "Produced by partial enzymatic or acid hydrolysis of starch (corn, rice, potato, or wheat). Features a high glycemic index (typically 85-105).",
+      "fitness_context": "Utilized in intra-workout carbohydrate powders and mass gainers for rapid gastric emptying and post-exercise glycogen replenishment.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Sucrose",
+      "synonyms": [
+        "sucrose",
+        "sugar",
+        "cane sugar",
+        "table sugar",
+        "beet sugar",
+        "white sugar",
+        "granulated sugar"
+      ],
+      "category": "Nutritive Sweetener / Carbohydrate",
+      "function": "Disaccharide caloric sweetener providing sweetness, body, moisture retention, and rapid energy.",
+      "evidence_summary": "Disaccharide composed of 50% D-glucose and 50% D-fructose linked by glycosidic bond; yields 4 kcal/g and contributes to total and added sugars.",
+      "fitness_context": "Nutritive carbohydrate providing quick fuel during high-intensity training; excess intake may conflict with calorie-restricted fitness goals.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 212-1999)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Glucose Syrup",
+      "synonyms": [
+        "glucose syrup",
+        "corn syrup",
+        "liquid glucose",
+        "glucose-fructose syrup",
+        "high glucose syrup"
+      ],
+      "category": "Nutritive Sweetener / Carbohydrate",
+      "function": "Viscous aqueous solution of nutritive saccharides obtained by starch hydrolysis.",
+      "evidence_summary": "Contains glucose, maltose, and oligosaccharides. Modulates crystallization, viscosity, and sweetness in processed energy bars and confections.",
+      "fitness_context": "Caloric carbohydrate ingredient contributing to rapid glucose availability and declared added sugars on food labels.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 212-1999)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Sucralose",
+      "synonyms": [
+        "sucralose",
+        "splenda",
+        "e955",
+        "e 955",
+        "ins 955",
+        "ins955"
+      ],
+      "category": "Non-Nutritive Sweetener",
+      "function": "High-intensity non-caloric artificial sweetener roughly 600 times sweeter than sucrose.",
+      "evidence_summary": "Chlorinated sucrose molecule that passes through the human digestive tract largely unabsorbed, contributing zero net calories or glycemic impact.",
+      "fitness_context": "Enables zero-sugar sweetening in whey proteins, BCAAs, and pre-workout formulas without increasing caloric intake.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 955)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Stevia Extract",
+      "synonyms": [
+        "stevia",
+        "stevia extract",
+        "steviol glycosides",
+        "reb a",
+        "rebaudioside a",
+        "stevioside",
+        "e960",
+        "e 960",
+        "ins 960",
+        "ins960",
+        "ins 960a",
+        "ins 960b"
+      ],
+      "category": "Non-Nutritive Sweetener",
+      "function": "High-potency plant-derived non-caloric sweetener.",
+      "evidence_summary": "Purified extract of steviol glycosides from Stevia rebaudiana leaves, approximately 200-350 times sweeter than sucrose with negligible caloric contribution.",
+      "fitness_context": "Plant-derived non-nutritive sweetener favored in naturally sweetened fitness supplements and functional foods.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 960)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Acesulfame Potassium",
+      "synonyms": [
+        "acesulfame potassium",
+        "acesulfame k",
+        "ace-k",
+        "e950",
+        "e 950",
+        "ins 950",
+        "ins950"
+      ],
+      "category": "Non-Nutritive Sweetener",
+      "function": "Heat-stable high-intensity calorie-free sweetener approximately 200 times sweeter than sucrose.",
+      "evidence_summary": "Synthetic potassium salt of an oxathiazinone dioxide derivative; excreted unchanged by the kidneys without caloric conversion.",
+      "fitness_context": "Commonly paired synergistically with sucralose to create a rounded sweetness profile in sugar-free sports nutrition products.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 950)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Soy Lecithin",
+      "synonyms": [
+        "soy lecithin",
+        "soya lecithin",
+        "lecithin (soy)",
+        "e322",
+        "e 322",
+        "ins 322",
+        "ins322",
+        "ins 322(i)",
+        "ins322i",
+        "lecithin"
+      ],
+      "category": "Emulsifier",
+      "function": "Natural phospholipid surfactant that facilitates wetting, dispersion, and instantization of hydrophobic powders.",
+      "evidence_summary": "Complex mixture of phospholipids (phosphatidylcholine, phosphatidylethanolamine, phosphatidylinositol) extracted from soybean oil refining.",
+      "fitness_context": "Enables protein powders to disperse smoothly in cold liquids with minimal shaker-cup clumping.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 322)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Sunflower Lecithin",
+      "synonyms": [
+        "sunflower lecithin",
+        "lecithin (sunflower)",
+        "sunflower seed lecithin"
+      ],
+      "category": "Emulsifier",
+      "function": "Non-soy plant phospholipid emulsifier and instantizing agent.",
+      "evidence_summary": "Phospholipid complex extracted from mechanically pressed or solvent-extracted sunflower seeds, avoiding major common food allergens.",
+      "fitness_context": "Provides powder solubility and dispersion in allergen-sensitive and soy-free sports supplements.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Xanthan Gum",
+      "synonyms": [
+        "xanthan gum",
+        "gum xanthan",
+        "e415",
+        "e 415",
+        "ins 415",
+        "ins415"
+      ],
+      "category": "Stabilizer / Thickener",
+      "function": "Hydrocolloid polysaccharide used to impart viscosity, prevent particle settling, and create smooth mouthfeel.",
+      "evidence_summary": "Exocellular polysaccharide produced by pure culture fermentation of carbohydrate by Xanthomonas campestris; effective at very low dosages (0.1-0.3%).",
+      "fitness_context": "Gives protein shakes a thicker, milkshake-like texture and prevents cocoa or insoluble proteins from settling at the bottom.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 415)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Guar Gum",
+      "synonyms": [
+        "guar gum",
+        "gum guar",
+        "e412",
+        "e 412",
+        "ins 412",
+        "ins412"
+      ],
+      "category": "Stabilizer / Thickener",
+      "function": "Galactomannan polysaccharide used for cold-water hydration, thickening, and stabilizing suspensions.",
+      "evidence_summary": "Milled endosperm of Cyamopsis tetragonoloba seeds. Provides dietary soluble fiber and pseudoplastic rheology in aqueous solutions.",
+      "fitness_context": "Enhances texture, satiety, and body in meal replacement powders and protein pudding mixes.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 412)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Citric Acid",
+      "synonyms": [
+        "citric acid",
+        "acid (citric)",
+        "e330",
+        "e 330",
+        "ins 330",
+        "ins330"
+      ],
+      "category": "Acidity Regulator / Acidulant",
+      "function": "Organic food acid providing characteristic tartness, pH control, and antioxidant synergism.",
+      "evidence_summary": "Tricarboxylic acid naturally found in citrus fruits; commercially produced via microbial fermentation of glucose substrates.",
+      "fitness_context": "Provides refreshing tart flavor profiles in fruity protein isolate drinks, intra-workout electrolytes, and pre-workout formulas.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 330)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Sodium Chloride",
+      "synonyms": [
+        "sodium chloride",
+        "salt",
+        "table salt",
+        "sea salt",
+        "iodized salt"
+      ],
+      "category": "Mineral / Electrolyte",
+      "function": "Essential mineral electrolyte compound providing sodium and chloride ions for osmotic balance and flavor enhancement.",
+      "evidence_summary": "Inorganic crystalline ionic compound containing ~39.3% sodium and ~60.7% chloride by weight. Essential for cellular fluid homeostasis and nerve conduction.",
+      "fitness_context": "Crucial electrolyte lost via perspiration; supports muscular contractility, vascular volume, and intra-workout hydration balance.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 150-1985)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Cocoa Powder",
+      "synonyms": [
+        "cocoa powder",
+        "cocoa",
+        "cacao powder",
+        "alkalized cocoa powder",
+        "alkalized cocoa",
+        "dutch process cocoa",
+        "dutch cocoa",
+        "dutch processed cocoa",
+        "defatted cocoa powder"
+      ],
+      "category": "Flavoring / Whole Food Component",
+      "function": "Naturally derived particulate flavoring agent providing chocolate flavor, natural color, and polyphenol compounds.",
+      "evidence_summary": "Derived from roasted, fermented, and pressed Theobroma cacao seeds. Contains dietary fiber, trace minerals (iron, magnesium), and flavanol antioxidants.",
+      "fitness_context": "Standard natural flavoring in chocolate-flavored protein powders and bars, contributing small amounts of fiber and dietary minerals.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 105-1981)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Sunflower Oil",
+      "synonyms": [
+        "sunflower oil",
+        "high oleic sunflower oil",
+        "sunflower seed oil",
+        "refined sunflower oil"
+      ],
+      "category": "Fat / Lipid",
+      "function": "Plant-based edible oil providing essential dietary fatty acids, smooth mouthfeel, and caloric energy.",
+      "evidence_summary": "Triglyceride matrix extracted from Helianthus annuus seeds, rich in monounsaturated (oleic) or polyunsaturated (linoleic) fatty acids and vitamin E.",
+      "fitness_context": "Used as a fat source in nutrition bars and mass gainers to deliver dietary calories and maintain pliable texture.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 210-1999)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Rolled Oats",
+      "synonyms": [
+        "rolled oats",
+        "oats",
+        "oat flakes",
+        "whole grain oats",
+        "oat flour",
+        "wholegrain rolled oats",
+        "whole rolled oats"
+      ],
+      "category": "Whole Grain / Complex Carbohydrate",
+      "function": "Minimally processed cereal grain base offering complex starch, soluble beta-glucan fiber, and plant micronutrients.",
+      "evidence_summary": "Dehulled and steamed oat groats rolled into flat flakes. High in beta-glucan, shown to modulate postprandial glucose and assist blood lipid profiles.",
+      "fitness_context": "Staple complex carbohydrate for bodybuilding and endurance diets, providing sustained low-GI energy release and satiety.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Almonds",
+      "synonyms": [
+        "almonds",
+        "almond",
+        "almond pieces",
+        "roasted almonds",
+        "raw almonds",
+        "sliced almonds"
+      ],
+      "category": "Tree Nut / Whole Food Component",
+      "function": "Nutrient-dense whole-food tree nut providing monounsaturated fatty acids, plant protein, dietary fiber, and micronutrients.",
+      "evidence_summary": "Edible seeds of Prunus dulcis. Rich in oleic acid, alpha-tocopherol (vitamin E), riboflavin, and dietary magnesium.",
+      "fitness_context": "Whole-food source of healthy fats and protein, promoting prolonged satiety and cardiovascular nutrition in sports snack formulations.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Pea Protein Isolate",
+      "synonyms": [
+        "pea protein isolate",
+        "pea protein",
+        "isolated pea protein",
+        "yellow pea protein"
+      ],
+      "category": "Protein Source",
+      "function": "Hypoallergenic plant-derived protein isolate (typically 80-85% protein concentration).",
+      "evidence_summary": "Extracted from yellow split peas (Pisum sativum) using aqueous isolation. Rich in BCAAs, lysine, arginine, and iron; naturally free of lactose and gluten.",
+      "fitness_context": "Widely used vegan protein supplement supporting muscle protein synthesis comparable to whey in clinical trial settings.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Brown Rice Protein",
+      "synonyms": [
+        "brown rice protein",
+        "rice protein",
+        "rice protein concentrate",
+        "rice protein isolate",
+        "sprouted brown rice protein"
+      ],
+      "category": "Protein Source",
+      "function": "Hypoallergenic grain protein concentrate/isolate containing approximately 80% protein.",
+      "evidence_summary": "Produced by enzymatically treating whole brown rice grain to isolate protein fractions. High in sulfur amino acids (methionine and cysteine).",
+      "fitness_context": "Frequently combined with pea protein in a 70:30 or 50:50 ratio to achieve a complementary plant-based complete amino acid profile.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Dextrose",
+      "synonyms": [
+        "dextrose",
+        "d-glucose",
+        "dextrose monohydrate"
+      ],
+      "category": "Carbohydrate / Nutritive Sweetener",
+      "function": "Simple monosaccharide sugar used for rapid energy provision and mild sweetness.",
+      "evidence_summary": "Pure D-glucose isomer yielding 4 kcal/g with a glycemic index of 100. Absorbed directly in the small intestine without requiring enzymatic cleavage.",
+      "fitness_context": "Used in post-workout nutrition shakes to spike insulin and rapidly refill depleted glycogen reserves.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex CXS 212-1999)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Ascorbic Acid",
+      "synonyms": [
+        "ascorbic acid",
+        "vitamin c",
+        "l-ascorbic acid",
+        "e300",
+        "e 300",
+        "ins 300",
+        "ins300"
+      ],
+      "category": "Vitamin / Antioxidant",
+      "function": "Essential water-soluble micronutrient and antioxidant preserving product freshness and preventing nutrient oxidation.",
+      "evidence_summary": "Essential cofactor in collagen biosynthesis, carnitine transport, and catecholamine neurotransmitter synthesis; potent reducing agent.",
+      "fitness_context": "Micronutrient supporting cellular antioxidant defense, immune response, and collagen synthesis in joint tissues.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 300)",
+      "confidence": "HIGH"
+    },
+    {
+      "canonical_name": "Potassium Chloride",
+      "synonyms": [
+        "potassium chloride",
+        "e508",
+        "e 508",
+        "ins 508",
+        "ins508"
+      ],
+      "category": "Mineral / Electrolyte",
+      "function": "Mineral salt providing potassium ions for electrolyte supplementation, flavor enhancement, and sodium reduction.",
+      "evidence_summary": "Inorganic salt providing ~52.4% potassium and ~47.6% chloride by weight. Critical for maintaining resting membrane potential and cardiac electrophysiology.",
+      "fitness_context": "Key intracellular electrolyte supporting normal muscular contractility, hydration balance, and cramp prevention during extended exercise.",
+      "provenance": "NutriForge Curated Food Science Registry v1.0 (Codex Alimentarius INS 508)",
+      "confidence": "HIGH"
+    }
+  ]
+}

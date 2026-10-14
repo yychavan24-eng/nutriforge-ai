@@ -16,8 +16,10 @@ from app.schemas import (
     RecheckRequest,
     AssistantRequest,
     ScaleServingRequest,
-    AllergenCheckRequest
+    AllergenCheckRequest,
+    IngredientAnalysisRequest
 )
+from app.services.ingredient_engine import analyze_ingredients
 from app.services.ocr import (
     OCRProvider,
     MockOCRProvider,
@@ -216,7 +218,7 @@ def load_db_state():
         init_db()
         seed_demo_products(DEMO_PRODUCTS)
         db = SessionLocal()
-        
+
         # Restore Profile
         prof = db.query(ProfileModel).filter(ProfileModel.id == "current_user").first()
         if prof and prof.goal:
@@ -231,7 +233,7 @@ def load_db_state():
                 "priorities": json.loads(prof.priorities_json) if prof.priorities_json else ["protein", "calories"],
                 "daily_targets": json.loads(prof.daily_targets_json) if prof.daily_targets_json else {}
             }
-            
+
         # Restore any newly created community products
         db_products = db.query(ProductModel).all()
         if db_products:
@@ -255,15 +257,48 @@ load_db_state()
 def read_root():
     return {"message": "Welcome to NutriForge AI API - Phase 1"}
 
+def enrich_product_with_ingredient_intelligence(product_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enriches a product dictionary with deterministic ingredient intelligence.
+    Prefers user-confirmed raw_ingredient_text if present, or derives from structured_ingredients.
+    Preserves all existing fields without destructive modifications.
+    """
+    p = dict(product_dict)
+    raw_text = p.get("raw_ingredient_text")
+    structured = p.get("structured_ingredients") or []
+
+    statement_to_analyze = raw_text
+    if (statement_to_analyze is None or not statement_to_analyze.strip()) and structured:
+        token_texts = [
+            item.get("text", "") if isinstance(item, dict) else getattr(item, "text", "")
+            for item in structured
+        ]
+        statement_to_analyze = ", ".join(t.strip() for t in token_texts if t and t.strip())
+
+    try:
+        analysis = analyze_ingredients(statement_to_analyze)
+        p["ingredient_intelligence"] = analysis.to_dict()
+    except Exception as e:
+        p["ingredient_intelligence"] = {
+            "error": f"Failed to compute ingredient intelligence: {str(e)}",
+            "raw_statement": statement_to_analyze or "",
+            "total_ingredients": 0,
+            "catalogued_count": 0,
+            "uncatalogued_count": 0,
+            "has_uncertainty": True,
+            "ingredients": []
+        }
+    return p
+
 @app.get("/api/products")
 def get_products():
-    return DEMO_PRODUCTS
+    return [enrich_product_with_ingredient_intelligence(p) for p in DEMO_PRODUCTS]
 
 @app.get("/api/products/{id}")
 def get_product(id: str):
     product = next((p for p in DEMO_PRODUCTS if p["id"] == id), None)
     if product:
-        return product
+        return enrich_product_with_ingredient_intelligence(product)
     return {"error": "Product not found"}
 
 @app.get("/api/profile")
@@ -296,7 +331,7 @@ def create_profile(profile_data: ProfileData):
     global CURRENT_PROFILE
     data = profile_data.model_dump()
     CURRENT_PROFILE = data
-    
+
     # Also persist to SQLite/PostgreSQL
     try:
         db = SessionLocal()
@@ -497,8 +532,13 @@ def lookup_barcode(barcode: str):
 @app.post("/api/products")
 def create_product(product: ProductBase):
     product_dict = product.model_dump()
+
+    # Derive enriched ingredient intelligence prioritizing the user-confirmed raw text
+    enriched = enrich_product_with_ingredient_intelligence(product_dict)
+    product_dict["ingredient_intelligence"] = enriched.get("ingredient_intelligence")
+
     DEMO_PRODUCTS.append(product_dict)
-    
+
     # Save to DB
     try:
         db = SessionLocal()
@@ -556,11 +596,26 @@ def get_product_ingredients(id: str):
         return {"error": "Product not found"}
     ingredients = product.get("raw_ingredient_text", "")
     allergens = product.get("allergens", [])
+    enriched = enrich_product_with_ingredient_intelligence(product)
     return {
         "ingredients": [i.strip() for i in ingredients.split(",")] if ingredients else [],
         "allergens": allergens,
-        "structured_ingredients": product.get("structured_ingredients", [])
+        "structured_ingredients": product.get("structured_ingredients", []),
+        "ingredient_intelligence": enriched.get("ingredient_intelligence")
     }
+
+@app.get("/api/products/{id}/ingredient-intelligence")
+def get_product_ingredient_intelligence(id: str):
+    product = next((p for p in DEMO_PRODUCTS if p["id"] == id), None)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    enriched = enrich_product_with_ingredient_intelligence(product)
+    return enriched.get("ingredient_intelligence")
+
+@app.post("/api/ingredients/analyze")
+def analyze_ingredient_text(request: IngredientAnalysisRequest):
+    analysis = analyze_ingredients(request.raw_ingredient_text)
+    return {"status": "success", "data": analysis.to_dict()}
 
 @app.get("/api/products/{id}/claims")
 def get_product_claims(id: str):
@@ -581,7 +636,7 @@ def compare_products(request: CompareRequest):
     products = [p for p in DEMO_PRODUCTS if p["id"] in request.product_ids]
     if not products:
         raise HTTPException(status_code=400, detail="No valid products found")
-    
+
     # Run full Smart Compare engine
     result = compare_multiple_products(products, request.profile)
     return result
@@ -598,10 +653,10 @@ def ask_assistant(request: AssistantRequest):
     """
     profile = request.profile or ProfileData()
     user_query = request.query.lower()
-    
+
     # Context-grounded response logic
     context_products = [p for p in DEMO_PRODUCTS if p["id"] in request.context_product_ids]
-    
+
     if "protein" in user_query:
         if context_products:
             p_names = ", ".join([f"{p['name']} ({p.get('protein', 0)}g protein)" for p in context_products])

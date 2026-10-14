@@ -172,7 +172,7 @@ export default function Scan() {
         fibre: extractedData.fibre !== null && extractedData.fibre !== undefined ? parseFloat(extractedData.fibre) : 0,
         provenance,
         raw_ingredient_text: extractedData.raw_ingredient_text || "",
-        structured_ingredients: extractedData.structured_ingredients || [],
+        structured_ingredients: editedFields.has('ingredients') ? [] : (extractedData.structured_ingredients || []),
         allergens: extractedData.allergens || [],
         claims: extractedData.claims || [],
         fssai_information: "Awaiting Verification",
@@ -224,7 +224,7 @@ export default function Scan() {
       </div>
 
       <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-        
+
         {loading && mode !== 'review' ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
@@ -236,24 +236,24 @@ export default function Scan() {
             <h2 className="text-lg font-bold mb-2 text-slate-800">Enter Barcode</h2>
             <p className="text-sm text-slate-500 mb-4">Lookup standard packaged food barcodes in catalog.</p>
             <form onSubmit={handleBarcodeSubmit} className="space-y-4">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 autoFocus
-                placeholder="e.g. 8901234567890" 
+                placeholder="e.g. 8901234567890"
                 className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-mono"
                 value={barcodeInput}
                 onChange={e => setBarcodeInput(e.target.value)}
               />
               <div className="flex gap-4">
-                <button 
-                  type="button" 
-                  onClick={() => setMode('select')} 
+                <button
+                  type="button"
+                  onClick={() => setMode('select')}
                   className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-medium hover:bg-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-500 transition-colors shadow-sm"
                 >
                   Lookup Barcode
@@ -310,31 +310,31 @@ export default function Scan() {
                 </div>
               </div>
             )}
-            
+
             <form onSubmit={handleReviewSave} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Product Name {isFieldFlagged('name') && <span className="text-xs text-amber-600 font-semibold">(Verify)</span>}
                   </label>
-                  <input 
+                  <input
                     className={`w-full border rounded-lg px-3 py-2 text-sm ${isFieldFlagged('name') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
-                    value={extractedData.name || ''} 
-                    onChange={e => { setExtractedData({...extractedData, name: e.target.value}); markFieldEdited('name'); }} 
+                    value={extractedData.name || ''}
+                    onChange={e => { setExtractedData({...extractedData, name: e.target.value}); markFieldEdited('name'); }}
                     placeholder="Enter product title"
-                    required 
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Brand {isFieldFlagged('brand') && <span className="text-xs text-amber-600 font-semibold">(Verify)</span>}
                   </label>
-                  <input 
+                  <input
                     className={`w-full border rounded-lg px-3 py-2 text-sm ${isFieldFlagged('brand') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
-                    value={extractedData.brand || ''} 
-                    onChange={e => { setExtractedData({...extractedData, brand: e.target.value}); markFieldEdited('brand'); }} 
+                    value={extractedData.brand || ''}
+                    onChange={e => { setExtractedData({...extractedData, brand: e.target.value}); markFieldEdited('brand'); }}
                     placeholder="Brand or Manufacturer"
-                    required 
+                    required
                   />
                 </div>
               </div>
@@ -346,34 +346,34 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Mass / Value {isFieldFlagged('serving_size_value') && <span className="text-amber-600 font-bold">*</span>}
                     </label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step="any"
                       className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('serving_size_value') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
-                      value={extractedData.serving_size_value ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, serving_size_value: e.target.value}); markFieldEdited('serving'); }} 
+                      value={extractedData.serving_size_value ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, serving_size_value: e.target.value}); markFieldEdited('serving'); }}
                       placeholder="e.g. 30"
-                      required 
+                      required
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">Unit</label>
-                    <input 
-                      type="text" 
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm" 
-                      value={extractedData.serving_size_unit || 'g'} 
-                      onChange={e => setExtractedData({...extractedData, serving_size_unit: e.target.value})} 
-                      required 
+                    <input
+                      type="text"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      value={extractedData.serving_size_unit || 'g'}
+                      onChange={e => setExtractedData({...extractedData, serving_size_unit: e.target.value})}
+                      required
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 1 scoop / 1 bar" 
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm" 
-                      value={extractedData.serving_description || ''} 
-                      onChange={e => setExtractedData({...extractedData, serving_description: e.target.value})} 
+                    <input
+                      type="text"
+                      placeholder="e.g. 1 scoop / 1 bar"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      value={extractedData.serving_description || ''}
+                      onChange={e => setExtractedData({...extractedData, serving_description: e.target.value})}
                     />
                   </div>
                 </div>
@@ -389,12 +389,12 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Calories (kcal) {isFieldFlagged('calories') && <span className="text-amber-600 font-bold">*</span>}
                     </label>
-                    <input 
-                      type="number" 
-                      step="any" 
+                    <input
+                      type="number"
+                      step="any"
                       className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('calories') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
-                      value={extractedData.calories ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, calories: e.target.value}); markFieldEdited('calories'); }} 
+                      value={extractedData.calories ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, calories: e.target.value}); markFieldEdited('calories'); }}
                       placeholder="e.g. 150"
                     />
                   </div>
@@ -402,12 +402,12 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Protein (g) {isFieldFlagged('protein') && <span className="text-amber-600 font-bold">*</span>}
                     </label>
-                    <input 
-                      type="number" 
-                      step="any" 
+                    <input
+                      type="number"
+                      step="any"
                       className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('protein') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
-                      value={extractedData.protein ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, protein: e.target.value}); markFieldEdited('protein'); }} 
+                      value={extractedData.protein ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, protein: e.target.value}); markFieldEdited('protein'); }}
                       placeholder="e.g. 24"
                     />
                   </div>
@@ -415,12 +415,12 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Carbohydrates (g) {isFieldFlagged('carbohydrates') && <span className="text-amber-600 font-bold">*</span>}
                     </label>
-                    <input 
-                      type="number" 
-                      step="any" 
+                    <input
+                      type="number"
+                      step="any"
                       className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('carbohydrates') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
-                      value={extractedData.carbohydrates ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, carbohydrates: e.target.value}); markFieldEdited('carbohydrates'); }} 
+                      value={extractedData.carbohydrates ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, carbohydrates: e.target.value}); markFieldEdited('carbohydrates'); }}
                       placeholder="e.g. 5"
                     />
                   </div>
@@ -428,12 +428,12 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Total Sugar (g)
                     </label>
-                    <input 
-                      type="number" 
-                      step="any" 
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm" 
-                      value={extractedData.total_sugar ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, total_sugar: e.target.value}); markFieldEdited('total_sugar'); }} 
+                    <input
+                      type="number"
+                      step="any"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      value={extractedData.total_sugar ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, total_sugar: e.target.value}); markFieldEdited('total_sugar'); }}
                       placeholder="e.g. 1.5"
                     />
                   </div>
@@ -441,12 +441,12 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Added Sugar (g)
                     </label>
-                    <input 
-                      type="number" 
-                      step="any" 
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm" 
-                      value={extractedData.added_sugar ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, added_sugar: e.target.value}); markFieldEdited('added_sugar'); }} 
+                    <input
+                      type="number"
+                      step="any"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      value={extractedData.added_sugar ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, added_sugar: e.target.value}); markFieldEdited('added_sugar'); }}
                       placeholder="e.g. 0"
                     />
                   </div>
@@ -454,12 +454,12 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Total Fat (g) {isFieldFlagged('total_fat') && <span className="text-amber-600 font-bold">*</span>}
                     </label>
-                    <input 
-                      type="number" 
-                      step="any" 
+                    <input
+                      type="number"
+                      step="any"
                       className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('total_fat') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
-                      value={extractedData.total_fat ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, total_fat: e.target.value}); markFieldEdited('total_fat'); }} 
+                      value={extractedData.total_fat ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, total_fat: e.target.value}); markFieldEdited('total_fat'); }}
                       placeholder="e.g. 2"
                     />
                   </div>
@@ -467,12 +467,12 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Sodium (mg) {isFieldFlagged('sodium') && <span className="text-amber-600 font-bold">*</span>}
                     </label>
-                    <input 
-                      type="number" 
-                      step="any" 
+                    <input
+                      type="number"
+                      step="any"
                       className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('sodium') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
-                      value={extractedData.sodium ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, sodium: e.target.value}); markFieldEdited('sodium'); }} 
+                      value={extractedData.sodium ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, sodium: e.target.value}); markFieldEdited('sodium'); }}
                       placeholder="e.g. 120"
                     />
                   </div>
@@ -480,12 +480,12 @@ export default function Scan() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       Fibre (g)
                     </label>
-                    <input 
-                      type="number" 
-                      step="any" 
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm" 
-                      value={extractedData.fibre ?? ''} 
-                      onChange={e => { setExtractedData({...extractedData, fibre: e.target.value}); markFieldEdited('fibre'); }} 
+                    <input
+                      type="number"
+                      step="any"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      value={extractedData.fibre ?? ''}
+                      onChange={e => { setExtractedData({...extractedData, fibre: e.target.value}); markFieldEdited('fibre'); }}
                       placeholder="e.g. 3"
                     />
                   </div>
@@ -494,11 +494,11 @@ export default function Scan() {
 
               <div className="border-t border-slate-100 pt-4">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Ingredients Statement</label>
-                <textarea 
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm h-20" 
-                  value={extractedData.raw_ingredient_text || ''} 
+                <textarea
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm h-20"
+                  value={extractedData.raw_ingredient_text || ''}
                   placeholder="Verbatim ingredients as printed on packaging"
-                  onChange={e => { setExtractedData({...extractedData, raw_ingredient_text: e.target.value}); markFieldEdited('ingredients'); }} 
+                  onChange={e => { setExtractedData({...extractedData, raw_ingredient_text: e.target.value}); markFieldEdited('ingredients'); }}
                 />
               </div>
 
@@ -507,16 +507,16 @@ export default function Scan() {
                   Saving will ingest this product with verified provenance into NutriForge.
                 </p>
                 <div className="flex gap-3">
-                  <button 
-                    type="button" 
-                    onClick={() => setMode('select')} 
+                  <button
+                    type="button"
+                    onClick={() => setMode('select')}
                     className="px-4 py-2 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-100 text-sm"
                   >
                     Discard
                   </button>
-                  <button 
-                    type="submit" 
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 disabled:opacity-50 text-sm shadow-sm" 
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 disabled:opacity-50 text-sm shadow-sm"
                     disabled={loading}
                   >
                     {loading ? "Saving..." : "Verify & Analyze"}
@@ -547,7 +547,7 @@ export default function Scan() {
                 </div>
               </div>
             )}
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-blue-50/20 transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer group">
                 <div className="w-12 h-12 bg-blue-50 group-hover:bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 transition-colors">
@@ -559,8 +559,8 @@ export default function Scan() {
                 </div>
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </label>
-              
-              <button 
+
+              <button
                 onClick={() => setMode('barcode')}
                 className="border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50/20 transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3 group"
               >
@@ -590,7 +590,7 @@ export default function Scan() {
                 Try Demo Mode (Simulated)
               </button>
             </div>
-            
+
             <div className="relative pt-2">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-slate-200"></div>
@@ -600,7 +600,7 @@ export default function Scan() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => navigate('/app/products')}
               className="w-full bg-slate-900 text-white font-medium py-3 rounded-xl hover:bg-slate-800 transition-colors flex justify-center items-center gap-2 shadow-sm"
             >

@@ -1,4 +1,4 @@
-export type ValueSource = 
+export type ValueSource =
   | 'LABEL_DECLARED'
   | 'MANUAL_ENTRY'
   | 'CALCULATED'
@@ -16,6 +16,35 @@ export interface IngredientNode {
   text: string;
   is_allergen: boolean;
   explanation?: string;
+}
+
+export interface EnrichedIngredient {
+  raw_text: string;
+  normalized_name: string;
+  canonical_name?: string | null;
+  matched_alias?: string | null;
+  category: string;
+  function?: string | null;
+  evidence_summary?: string | null;
+  fitness_context?: string | null;
+  provenance?: string | null;
+  confidence: string;
+  status: string;
+  is_compound: boolean;
+  specification?: string | null;
+  children: EnrichedIngredient[];
+  has_uncertainty: boolean;
+  uncertainty_reason?: string | null;
+}
+
+export interface IngredientIntelligenceResult {
+  raw_statement: string;
+  total_ingredients: number;
+  catalogued_count: number;
+  uncatalogued_count: number;
+  has_uncertainty: boolean;
+  ingredients: EnrichedIngredient[];
+  error?: string;
 }
 
 export interface Product {
@@ -42,6 +71,7 @@ export interface Product {
   provenance?: Record<string, ProvenanceInfo>;
   raw_ingredient_text?: string;
   structured_ingredients?: IngredientNode[];
+  ingredient_intelligence?: IngredientIntelligenceResult;
   allergens: string[];
   claims: string[];
   fssai_information?: string;
