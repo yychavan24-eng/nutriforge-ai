@@ -3,7 +3,8 @@ import type {
   ProfileData,
   ScaledNutrientData,
   AllergenCheckResult,
-  SmartCompareResponse
+  SmartCompareResponse,
+  IngredientIntelligenceResult
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -36,6 +37,20 @@ export const api = {
       throw new Error(data.error);
     }
     return data;
+  },
+
+  async getIngredientIntelligence(productId: string): Promise<IngredientIntelligenceResult> {
+    const res = await fetch(`${API_BASE_URL}/api/products/${productId}/ingredient-intelligence`);
+    return handleResponse<IngredientIntelligenceResult>(res);
+  },
+
+  async analyzeIngredients(rawIngredientText: string): Promise<{ status: string; data: IngredientIntelligenceResult }> {
+    const res = await fetch(`${API_BASE_URL}/api/ingredients/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_ingredient_text: rawIngredientText })
+    });
+    return handleResponse(res);
   },
 
   async saveProduct(product: Partial<Product>): Promise<{ status: string; product_id: string }> {

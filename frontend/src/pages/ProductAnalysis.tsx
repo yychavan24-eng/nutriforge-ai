@@ -1,17 +1,179 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  ShieldCheck, 
-  AlertTriangle, 
-  Info, 
-  CheckCircle2, 
+import {
+  ShieldCheck,
+  AlertTriangle,
+  Info,
+  CheckCircle2,
   ArrowLeft,
   Scale,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronRight,
+  Layers,
+  Dumbbell,
+  BookOpen,
+  HelpCircle,
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 import { useProfile } from '../contexts/ProfileContext';
 import { api } from '../services/api';
-import type { Product, AllergenCheckResult, ScaledNutrientData } from '../types';
+import type {
+  Product,
+  AllergenCheckResult,
+  ScaledNutrientData,
+  EnrichedIngredient,
+  IngredientIntelligenceResult
+} from '../types';
+
+function IngredientItemCard({
+  ingredient,
+  depth = 0
+}: {
+  ingredient: EnrichedIngredient;
+  depth?: number;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const isCompound = ingredient.is_compound || (ingredient.children && ingredient.children.length > 0);
+  const isCatalogued = ingredient.status === 'CATALOGUED';
+
+  return (
+    <div className={`rounded-xl border transition-all ${
+      depth > 0
+        ? 'ml-3 md:ml-6 mt-3 bg-white border-slate-200'
+        : 'bg-white border-slate-200 hover:border-slate-300'
+    }`}>
+      {/* Header / Main Row */}
+      <div className="p-4 flex flex-col md:flex-row md:items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="font-bold text-slate-900 text-base">
+              {ingredient.canonical_name || ingredient.raw_text}
+            </span>
+
+            {/* If canonical differs from declared raw text */}
+            {ingredient.canonical_name && ingredient.canonical_name.toLowerCase() !== ingredient.raw_text.toLowerCase() && (
+              <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-mono">
+                Label: &ldquo;{ingredient.raw_text}&rdquo;
+              </span>
+            )}
+
+            {/* Specification if present (e.g. 85%) */}
+            {ingredient.specification && (
+              <span className="text-xs bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded">
+                {ingredient.specification}
+              </span>
+            )}
+
+            {/* Recognition Status Badge */}
+            {isCatalogued ? (
+              <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1">
+                <CheckCircle2 size={12} /> Recognized
+              </span>
+            ) : (
+              <span className="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1">
+                <HelpCircle size={12} /> Uncatalogued
+              </span>
+            )}
+
+            {/* Category Badge */}
+            <span className="text-xs bg-slate-50 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full font-medium">
+              {ingredient.category}
+            </span>
+
+            {/* Compound indicator */}
+            {isCompound && (
+              <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1">
+                <Layers size={12} /> Compound Blend ({ingredient.children.length})
+              </span>
+            )}
+          </div>
+
+          {/* Manufacturing Function / Formulation Role */}
+          {ingredient.function ? (
+            <p className="text-sm text-slate-700 mt-1 leading-relaxed">
+              <strong className="text-slate-800 font-semibold">Formulation Role: </strong>
+              {ingredient.function}
+            </p>
+          ) : !isCatalogued ? (
+            <p className="text-xs text-slate-500 mt-1 italic">
+              Not currently catalogued in reference food-science registry. Does not indicate safety, toxicity, or risk.
+            </p>
+          ) : null}
+
+          {/* Fitness & Training Context (if available) */}
+          {ingredient.fitness_context && (
+            <div className="mt-2.5 flex items-start gap-2 bg-blue-50/50 border border-blue-100/80 rounded-lg p-2.5 text-xs text-blue-900">
+              <Dumbbell size={14} className="text-blue-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-semibold text-blue-900">Fitness & Training Context: </strong>
+                <span>{ingredient.fitness_context}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Evidence Summary & Provenance */}
+          {ingredient.evidence_summary && (
+            <div className="mt-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+              <div className="flex items-start gap-1.5">
+                <BookOpen size={13} className="text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-semibold text-slate-700">Scientific & Functional Evidence: </strong>
+                  <span>{ingredient.evidence_summary}</span>
+                  {ingredient.provenance && (
+                    <span className="block mt-1 text-[11px] text-slate-400">
+                      Standard: {ingredient.provenance}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Parsing Uncertainty Notice */}
+          {ingredient.has_uncertainty && ingredient.uncertainty_reason && (
+            <div className="mt-2 text-xs bg-amber-50 text-amber-800 border border-amber-200 p-2.5 rounded-lg flex items-center gap-1.5">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+              <span>
+                <strong>Syntax Notice: </strong> {ingredient.uncertainty_reason}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Expand / Collapse toggle for compound parents */}
+        {isCompound && (
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="self-start px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1 shrink-0"
+          >
+            {expanded ? (
+              <>Hide Sub-Ingredients <ChevronDown size={14} /></>
+            ) : (
+              <>View Sub-Ingredients ({ingredient.children.length}) <ChevronRight size={14} /></>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Nested Children */}
+      {isCompound && expanded && (
+        <div className="border-t border-slate-100 p-4 bg-slate-50/40 rounded-b-xl">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1">
+            <Layers size={13} /> Constituent Ingredients of {ingredient.canonical_name || ingredient.raw_text}
+          </div>
+          <div className="space-y-3">
+            {ingredient.children.map((child, idx) => (
+              <IngredientItemCard key={idx} ingredient={child} depth={depth + 1} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProductAnalysis() {
   const { id } = useParams<{ id: string }>();
@@ -22,8 +184,26 @@ export default function ProductAnalysis() {
   const [consumedAmount, setConsumedAmount] = useState<number>(100);
   const [scalingData, setScalingData] = useState<ScaledNutrientData | null>(null);
   const [allergenResult, setAllergenResult] = useState<AllergenCheckResult | null>(null);
+  const [ingredientIntelligence, setIngredientIntelligence] = useState<IngredientIntelligenceResult | null>(null);
+  const [ingredientLoading, setIngredientLoading] = useState(false);
+  const [ingredientError, setIngredientError] = useState<string | null>(null);
 
   const { profile } = useProfile();
+
+  const fetchIngredientIntelligence = (productId: string) => {
+    setIngredientLoading(true);
+    setIngredientError(null);
+    api.getIngredientIntelligence(productId)
+      .then(intel => {
+        setIngredientIntelligence(intel);
+      })
+      .catch(err => {
+        setIngredientError(err.message || 'Failed to load ingredient intelligence');
+      })
+      .finally(() => {
+        setIngredientLoading(false);
+      });
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -33,6 +213,11 @@ export default function ProductAnalysis() {
     api.getProduct(id)
       .then(data => {
         setProduct(data);
+        if (data.ingredient_intelligence) {
+          setIngredientIntelligence(data.ingredient_intelligence);
+        } else if (data.id) {
+          fetchIngredientIntelligence(data.id);
+        }
         const declared = data.serving_size_value || parseFloat(data.serving_size) || 100;
         setConsumedAmount(declared);
 
@@ -59,7 +244,7 @@ export default function ProductAnalysis() {
     if (!product) return;
 
     const declaredMass = product.serving_size_value || parseFloat(product.serving_size) || 100;
-    
+
     // 1. Fetch deterministic scaling
     api.scaleNutrition({
       product_id: product.id,
@@ -290,7 +475,7 @@ export default function ProductAnalysis() {
 
       {/* Tab Content */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 min-h-[420px]">
-        
+
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
@@ -354,16 +539,16 @@ export default function ProductAnalysis() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <button 
-                  onClick={() => setConsumedAmount(declaredAmount)} 
+                <button
+                  onClick={() => setConsumedAmount(declaredAmount)}
                   className={`text-xs px-3 py-1.5 rounded-lg border font-medium ${
                     consumedAmount === declaredAmount ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200'
                   }`}
                 >
                   Label Serving ({declaredAmount}g)
                 </button>
-                <button 
-                  onClick={() => setConsumedAmount(100)} 
+                <button
+                  onClick={() => setConsumedAmount(100)}
                   className={`text-xs px-3 py-1.5 rounded-lg border font-medium ${
                     consumedAmount === 100 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200'
                   }`}
@@ -418,13 +603,13 @@ export default function ProductAnalysis() {
 
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center bg-white border border-blue-200 rounded-xl px-3 py-2 shadow-sm">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     min="0"
                     step="1"
-                    value={consumedAmount === 0 ? '' : consumedAmount} 
-                    onChange={e => setConsumedAmount(parseFloat(e.target.value) || 0)} 
-                    className="w-24 text-lg font-bold text-slate-900 focus:outline-none" 
+                    value={consumedAmount === 0 ? '' : consumedAmount}
+                    onChange={e => setConsumedAmount(parseFloat(e.target.value) || 0)}
+                    className="w-24 text-lg font-bold text-slate-900 focus:outline-none"
                   />
                   <span className="text-slate-500 font-medium ml-1">grams</span>
                 </div>
@@ -557,56 +742,198 @@ export default function ProductAnalysis() {
         )}
 
         {/* INGREDIENTS TAB */}
-        {activeTab === 'ingredients' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Ingredient Intelligence</h2>
-                <p className="text-slate-600 text-sm">Extracted directly from package label.</p>
+        {activeTab === 'ingredients' && (() => {
+          const intel = ingredientIntelligence || product.ingredient_intelligence;
+          return (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Ingredient Intelligence</h2>
+                  <p className="text-slate-600 text-sm">
+                    Deterministic food-science breakdown, formulation functions, and reference registry evidence.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {product.raw_ingredient_text && (
+                    <span className="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5">
+                      <FileText size={12} /> Label Declared
+                    </span>
+                  )}
+                  {intel && (
+                    <button
+                      type="button"
+                      onClick={() => fetchIngredientIntelligence(product.id)}
+                      disabled={ingredientLoading}
+                      className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+                      title="Refresh ingredient analysis"
+                    >
+                      <RefreshCw size={14} className={ingredientLoading ? 'animate-spin' : ''} />
+                    </button>
+                  )}
+                </div>
               </div>
-              {product.raw_ingredient_text && (
-                <span className="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full font-medium">
-                  Label Declared
-                </span>
+
+              {/* Task 2: Separation of Concerns Banner */}
+              <div className="bg-blue-50/80 border border-blue-200/90 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-blue-950 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck size={20} className="text-blue-600 shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <strong className="font-semibold text-blue-900 block mb-0.5">
+                      Functional Analysis vs. Personal Restrictions
+                    </strong>
+                    <p className="text-xs text-blue-800 leading-relaxed">
+                      Ingredient Intelligence explains formulation functions, scientific context, and ingredient taxonomy.
+                      It does not evaluate personal dietary compliance or individual allergy safety.
+                      For profile-matched allergen warnings and restriction checks, use the dedicated engine.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('restrictions')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-white hover:bg-blue-50 border border-blue-300 rounded-lg shrink-0 transition-all shadow-sm hover:shadow"
+                >
+                  <ShieldCheck size={14} /> View Allergens & Checks
+                </button>
+              </div>
+
+              {/* Loading state */}
+              {ingredientLoading && !intel && (
+                <div className="p-8 text-center bg-white border border-slate-200 rounded-xl">
+                  <RefreshCw size={24} className="animate-spin text-blue-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-slate-700">Analyzing ingredient statement...</p>
+                  <p className="text-xs text-slate-500 mt-1">Parsing syntax and matching with reference knowledge base.</p>
+                </div>
               )}
-            </div>
 
-            {product.raw_ingredient_text && (
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Raw Ingredient Statement</h3>
-                <p className="text-slate-800 text-sm leading-relaxed">{product.raw_ingredient_text}</p>
-              </div>
-            )}
-
-            <div>
-              <h3 className="font-semibold text-slate-900 mb-3">Structured Ingredient Breakdown</h3>
-              <div className="space-y-2">
-                {product.structured_ingredients && product.structured_ingredients.length > 0 ? (
-                  product.structured_ingredients.map((ing, i) => (
-                    <div key={i} className="p-3.5 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-50">
-                      <div>
-                        <span className="font-medium text-slate-800 text-sm">{ing.text}</span>
-                        {ing.explanation && <p className="text-xs text-slate-500 mt-0.5">{ing.explanation}</p>}
-                      </div>
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        ing.is_allergen ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {ing.is_allergen ? 'Known Allergen' : 'Standard'}
-                      </span>
+              {/* Error state */}
+              {ingredientError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start justify-between gap-3 text-red-900">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="font-semibold text-sm">Failed to load ingredient intelligence</strong>
+                      <p className="text-xs text-red-700 mt-0.5">{ingredientError}</p>
                     </div>
-                  ))
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchIngredientIntelligence(product.id)}
+                    className="px-3 py-1.5 text-xs font-semibold bg-white text-red-700 border border-red-200 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Summary Metrics Bar */}
+              {intel && intel.total_ingredients > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl">
+                    <span className="text-xs text-slate-500 block">Total Declared</span>
+                    <span className="text-xl font-bold text-slate-900">{intel.total_ingredients}</span>
+                  </div>
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl">
+                    <span className="text-xs text-slate-500 block">Recognized in KB</span>
+                    <span className="text-xl font-bold text-emerald-600">{intel.catalogued_count}</span>
+                  </div>
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl">
+                    <span className="text-xs text-slate-500 block">Uncatalogued Items</span>
+                    <span className="text-xl font-bold text-slate-600">{intel.uncatalogued_count}</span>
+                  </div>
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl">
+                    <span className="text-xs text-slate-500 block">Registry Version</span>
+                    <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded inline-block mt-1">
+                      Reference KB v1.0
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Parsing Uncertainty Notice */}
+              {intel?.has_uncertainty && (
+                <div className="p-4 bg-amber-50/90 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-900">
+                  <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-xs leading-relaxed">
+                    <strong className="font-semibold block mb-0.5 text-amber-950">
+                      Syntax Notice: Bracket/Parenthesis Anomaly Detected
+                    </strong>
+                    The ingredient statement on this package label contains unconventional nesting, unclosed parentheses, or non-standard punctuation.
+                    NutriForge safely preserved the declared terms with conservative fallback parsing.
+                  </div>
+                </div>
+              )}
+
+              {/* Verbatim Ingredient Statement */}
+              {(intel?.raw_statement || product.raw_ingredient_text) ? (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText size={14} className="text-slate-500" /> Verbatim Raw Ingredient Statement
+                    </h3>
+                    <span className="text-[11px] text-slate-400 font-mono">Original Label Text</span>
+                  </div>
+                  <p className="text-slate-800 text-sm leading-relaxed font-sans bg-white p-3 rounded-lg border border-slate-200/70">
+                    {intel?.raw_statement || product.raw_ingredient_text}
+                  </p>
+                </div>
+              ) : null}
+
+              {/* Structured & Enriched Ingredient Breakdown */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-slate-900 text-base">
+                    Enriched Ingredient Breakdown
+                  </h3>
+                  {intel && intel.ingredients && intel.ingredients.length > 0 && (
+                    <span className="text-xs text-slate-500">
+                      {intel.ingredients.length} top-level {intel.ingredients.length === 1 ? 'ingredient' : 'ingredients'}
+                    </span>
+                  )}
+                </div>
+
+                {intel && intel.ingredients && intel.ingredients.length > 0 ? (
+                  <div className="space-y-3">
+                    {intel.ingredients.map((ing, i) => (
+                      <IngredientItemCard key={i} ingredient={ing} depth={0} />
+                    ))}
+                  </div>
+                ) : !product.raw_ingredient_text && (!intel || intel.ingredients.length === 0) ? (
+                  /* Empty state */
+                  <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl">
+                    <HelpCircle size={28} className="text-slate-400 mx-auto mb-2" />
+                    <h4 className="font-semibold text-slate-800 text-sm mb-1">No Ingredient Statement Available</h4>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                      This product record does not have a declared ingredient statement on file.
+                      If you have the physical packaging, scan or upload a packaging photo in the AI Label Scanner to extract ingredients.
+                    </p>
+                    <Link
+                      to="/app/scan"
+                      className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+                    >
+                      Go to Scanner
+                    </Link>
+                  </div>
                 ) : (
-                  (product.raw_ingredient_text ? product.raw_ingredient_text.split(',') : []).map((ing, i) => (
-                    <div key={i} className="p-3.5 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-50">
-                      <span className="font-medium text-slate-800 text-sm">{ing.trim()}</span>
-                      <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">Declared</span>
-                    </div>
-                  ))
+                  /* Fallback if raw text exists but no structured items yet */
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                    <p className="text-xs text-slate-500">No enriched ingredient breakdown available.</p>
+                  </div>
                 )}
               </div>
+
+              {/* Knowledge Base Footnote / Methodology */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-[11px] text-slate-500 leading-relaxed flex items-start gap-2">
+                <Info size={15} className="text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-slate-700">Methodology & Knowledge Base Provenance:</strong> Functions, categories, and evidence summaries are curated from standardized food-science authorities (CODEX Alimentarius, FSSAI, US FDA GRAS, and EFSA).
+                  NutriForge does not invent unverified claims or declare safety certifications. Uncatalogued ingredients are noted without assuming risk or toxicity.
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* CLAIMCHECK TAB */}
         {activeTab === 'claims' && (
@@ -666,40 +993,40 @@ export default function ProductAnalysis() {
   );
 }
 
-function MetricBox({ 
-  label, 
-  value, 
-  unit, 
-  highlight, 
-  warning, 
-  badge, 
-  targetBadge 
-}: { 
-  label: string; 
-  value: string | number; 
-  unit: string; 
-  highlight?: boolean; 
-  warning?: boolean; 
-  badge?: React.ReactNode; 
+function MetricBox({
+  label,
+  value,
+  unit,
+  highlight,
+  warning,
+  badge,
+  targetBadge
+}: {
+  label: string;
+  value: string | number;
+  unit: string;
+  highlight?: boolean;
+  warning?: boolean;
+  badge?: React.ReactNode;
   targetBadge?: React.ReactNode;
 }) {
   return (
     <div className={`p-4 rounded-xl border transition-all ${
-      highlight ? 'bg-blue-50/80 border-blue-200 shadow-sm' : 
-      warning ? 'bg-amber-50/80 border-amber-200' : 
+      highlight ? 'bg-blue-50/80 border-blue-200 shadow-sm' :
+      warning ? 'bg-amber-50/80 border-amber-200' :
       'bg-slate-50/80 border-slate-200'
     }`}>
       <div className="flex items-center justify-between mb-1">
         <span className={`text-xs font-semibold ${
-          highlight ? 'text-blue-800' : 
-          warning ? 'text-amber-800' : 
+          highlight ? 'text-blue-800' :
+          warning ? 'text-amber-800' :
           'text-slate-600'
         }`}>{label}</span>
         {badge}
       </div>
       <p className={`text-2xl font-bold ${
-        highlight ? 'text-blue-950' : 
-        warning ? 'text-amber-950' : 
+        highlight ? 'text-blue-950' :
+        warning ? 'text-amber-950' :
         'text-slate-900'
       }`}>
         {value} <span className="text-xs font-normal text-slate-500">{unit}</span>
