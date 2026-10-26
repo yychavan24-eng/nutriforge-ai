@@ -12,7 +12,7 @@ const API_BASE_URL = rawApiUrl
   ? (rawApiUrl.startsWith('http://') || rawApiUrl.startsWith('https://')
       ? rawApiUrl.replace(/\/+$/, '')
       : `https://${rawApiUrl.replace(/\/+$/, '')}`)
-  : (import.meta.env.PROD ? '' : 'http://localhost:8000');
+  : (import.meta.env.PROD ? 'https://nutriforge-backend-0doa.onrender.com' : 'http://localhost:8000');
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {

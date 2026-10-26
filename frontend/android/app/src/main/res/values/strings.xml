@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NutriForge AI</string>
+    <string name="title_activity_main">NutriForge AI</string>
+    <string name="package_name">com.nutriforge.ai</string>
+    <string name="custom_url_scheme">com.nutriforge.ai</string>
+</resources>

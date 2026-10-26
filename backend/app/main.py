@@ -66,7 +66,9 @@ if allowed_origins_raw.strip() == "*":
     cors_origins = ["*"]
     cors_credentials = False
 else:
-    cors_origins = [o.strip() for o in allowed_origins_raw.split(",") if o.strip()]
+    configured = [o.strip() for o in allowed_origins_raw.split(",") if o.strip()]
+    capacitor_origins = ["http://localhost", "https://localhost", "capacitor://localhost"]
+    cors_origins = list(dict.fromkeys(configured + capacitor_origins))
     cors_credentials = True
 
 app.add_middleware(
