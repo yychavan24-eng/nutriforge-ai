@@ -437,9 +437,15 @@ export default function ProductAnalysis() {
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                 <CheckCircle2 size={14} /> Label Analyzed
               </span>
-              <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">
-                {product.source_type || 'VERIFIED'}
-              </span>
+              {product.source_type === 'EXTERNAL_EVIDENCE' ? (
+                <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold">
+                  Open Food Facts
+                </span>
+              ) : (
+                <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">
+                  {product.source_type || 'VERIFIED'}
+                </span>
+              )}
             </div>
           </div>
 

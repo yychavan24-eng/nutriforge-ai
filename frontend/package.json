@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
+    "@capacitor/camera": "^8.2.6",
     "@capacitor/core": "^8.5.3",
+    "html5-qrcode": "^2.3.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

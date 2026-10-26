@@ -68,7 +68,7 @@ export const api = {
   },
 
   // Barcode & Scanner
-  async lookupBarcode(barcode: string): Promise<{ found: boolean; product?: Product; message?: string }> {
+  async lookupBarcode(barcode: string): Promise<{ found: boolean; product?: Product; message?: string; source?: string }> {
     const res = await fetch(`${API_BASE_URL}/api/barcode/${barcode}`);
     return handleResponse(res);
   },

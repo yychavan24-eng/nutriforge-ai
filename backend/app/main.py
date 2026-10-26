@@ -47,6 +47,7 @@ from app.services.compare_engine import (
     generate_field_by_field_comparison,
     generate_trade_offs
 )
+from app.services.openfoodfacts import fetch_open_food_facts_product
 from app.db.database import (
     init_db,
     seed_demo_products,
@@ -544,10 +545,23 @@ def scan_product(scan_data: ScanRequest):
 
 @app.get("/api/barcode/{barcode}")
 def lookup_barcode(barcode: str):
+    # 1. Check local catalog / in-memory products
     product = next((p for p in DEMO_PRODUCTS if p.get("barcode") == barcode), None)
     if product:
-        return {"found": True, "product": product}
-    return {"found": False, "message": "Product not found. Please scan the label."}
+        return {"found": True, "product": enrich_product_with_ingredient_intelligence(product), "source": "LOCAL_CATALOG"}
+
+    # 2. Check external Open Food Facts database
+    off_product = fetch_open_food_facts_product(barcode)
+    if off_product:
+        enriched_off = enrich_product_with_ingredient_intelligence(off_product)
+        DEMO_PRODUCTS.append(enriched_off)
+        return {"found": True, "product": enriched_off, "source": "OPEN_FOOD_FACTS"}
+
+    # 3. Honest response when unavailable
+    return {
+        "found": False,
+        "message": f"Product with barcode '{barcode}' was not found in the local catalog or Open Food Facts database. Please capture or upload a packaging photo."
+    }
 
 @app.post("/api/products")
 def create_product(product: ProductBase):
