@@ -2,7 +2,7 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
-psycopg2-binary
+psycopg[binary]
 pytest
 httpx
 google-genai
