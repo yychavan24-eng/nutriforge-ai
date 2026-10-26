@@ -4,7 +4,7 @@ import { api } from '../services/api';
 
 export type { ProfileData };
 
-export const defaultProfile: ProfileData = {
+const defaultProfile: ProfileData = {
   age: '',
   height: '',
   weight: '',
@@ -59,10 +59,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync with backend on initial load and keep localStorage fresh
-  const reloadProfile = async () => {
-    setIsLoading(true);
-    setError(null);
+  const fetchProfile = async () => {
     try {
       const res = await api.getProfile();
       if (res && res.data) {
@@ -90,8 +87,15 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Sync with backend on initial load and keep localStorage fresh
+  const reloadProfile = async () => {
+    setIsLoading(true);
+    setError(null);
+    await fetchProfile();
+  };
+
   useEffect(() => {
-    reloadProfile();
+    fetchProfile();
   }, []);
 
   const setProfile = async (newProfile: ProfileData): Promise<void> => {

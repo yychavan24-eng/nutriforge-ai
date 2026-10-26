@@ -207,11 +207,14 @@ export default function ProductAnalysis() {
 
   useEffect(() => {
     if (!id) return;
+    let isCurrent = true;
     setLoading(true);
     setError('');
+    setProduct(null);
 
     api.getProduct(id)
       .then(data => {
+        if (!isCurrent) return;
         setProduct(data);
         if (data.ingredient_intelligence) {
           setIngredientIntelligence(data.ingredient_intelligence);
@@ -232,16 +235,24 @@ export default function ProductAnalysis() {
         }
       })
       .catch(err => {
+        if (!isCurrent) return;
         setError(err.message || 'Product not found');
       })
       .finally(() => {
-        setLoading(false);
+        if (isCurrent) {
+          setLoading(false);
+        }
       });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [id]);
 
   // Recalculate serving scaling and allergen checking when consumedAmount or profile changes
   useEffect(() => {
     if (!product) return;
+    let isCurrent = true;
 
     const declaredMass = product.serving_size_value || parseFloat(product.serving_size) || 100;
 
@@ -252,8 +263,16 @@ export default function ProductAnalysis() {
       label_serving_mass: declaredMass,
       daily_targets: profile.daily_targets as Record<string, number> | undefined
     })
-      .then(res => setScalingData(res.data))
-      .catch(err => console.warn('Scaling error:', err));
+      .then(res => {
+        if (isCurrent) {
+          setScalingData(res.data);
+        }
+      })
+      .catch(err => {
+        if (isCurrent) {
+          console.warn('Scaling error:', err);
+        }
+      });
 
     // 2. Fetch deterministic allergen check
     api.checkAllergens({
@@ -261,9 +280,20 @@ export default function ProductAnalysis() {
       user_restrictions: profile.restrictions,
       dietary_preference: profile.dietaryPreference
     })
-      .then(res => setAllergenResult(res.data))
-      .catch(err => console.warn('Allergen check error:', err));
+      .then(res => {
+        if (isCurrent) {
+          setAllergenResult(res.data);
+        }
+      })
+      .catch(err => {
+        if (isCurrent) {
+          console.warn('Allergen check error:', err);
+        }
+      });
 
+    return () => {
+      isCurrent = false;
+    };
   }, [product, consumedAmount, profile]);
 
   const declaredAmount = product?.serving_size_value || (product ? parseFloat(product.serving_size) || 100 : 100);
@@ -424,9 +454,9 @@ export default function ProductAnalysis() {
                 <p className="font-semibold text-slate-900">{product.serving_description}</p>
               </div>
             )}
-            <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
-              <p className="text-xs text-blue-700 font-medium">Active Serving Mass</p>
-              <p className="font-bold text-blue-900">{consumedAmount}g ({multiplier.toFixed(2)}x label)</p>
+            <div className="bg-[#f5f8f5] px-4 py-2 rounded-xl border border-[#b4c8b6]">
+              <p className="text-xs text-[#183c27] font-semibold">Active Serving Mass</p>
+              <p className="font-extrabold text-[#122b1c]">{consumedAmount}g ({multiplier.toFixed(2)}x label)</p>
             </div>
           </div>
         </div>
@@ -434,18 +464,18 @@ export default function ProductAnalysis() {
 
       {/* Prominent Allergen Conflict Warning if any */}
       {allergenResult?.has_conflicts && (
-        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-red-900 shadow-sm flex items-start gap-3">
-          <AlertTriangle className="shrink-0 text-red-600 mt-0.5" size={22} />
+        <div className="mb-6 p-4 bg-[#ffe4e6] border-l-4 border-[#e11d48] rounded-r-xl text-[#9f1239] shadow-xs flex items-start gap-3">
+          <AlertTriangle className="shrink-0 text-[#e11d48] mt-0.5" size={22} />
           <div className="flex-1">
-            <h3 className="font-bold text-base text-red-800">
+            <h3 className="font-bold text-base text-[#9f1239]">
               Dietary Restriction Alert: {allergenResult.conflict_count} Conflict(s) Detected
             </h3>
-            <p className="text-sm text-red-700 mt-1">
+            <p className="text-sm text-[#9f1239]/90 mt-1">
               This product contains substances conflicting with your declared profile restrictions ({profile.restrictions || profile.dietaryPreference}).
             </p>
             <div className="mt-2 space-y-1">
               {allergenResult.conflicts.map((c, i) => (
-                <div key={i} className="text-xs bg-red-100/60 p-2 rounded text-red-900">
+                <div key={i} className="text-xs bg-white/70 p-2 rounded-lg text-[#9f1239] border border-[#fecdd3]">
                   <span className="font-semibold">[{c.confidence.replace(/_/g, ' ')}]</span> {c.explanation}
                 </div>
               ))}
@@ -455,16 +485,16 @@ export default function ProductAnalysis() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-slate-200 mb-6 overflow-x-auto">
+      <div className="border-b border-[#eae4d5] mb-6 overflow-x-auto">
         <nav className="flex space-x-6 min-w-max">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-4 text-sm font-semibold border-b-2 transition-colors ${
+              className={`pb-4 text-xs sm:text-sm font-semibold border-b-2 transition-all ${
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                  ? 'border-[#183c27] text-[#183c27]'
+                  : 'border-transparent text-[#68796d] hover:text-[#171d18] hover:border-[#ded5c2]'
               }`}
             >
               {tab.label}
@@ -480,26 +510,26 @@ export default function ProductAnalysis() {
         {activeTab === 'overview' && (
           <div className="space-y-8">
             {/* Goal Alignment Banner */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+            <div className="bg-[#f5f8f5] border border-[#b4c8b6] rounded-2xl p-6 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="text-blue-600" size={20} />
-                  <h2 className="text-lg font-bold text-slate-900">
+                  <Sparkles className="text-[#183c27]" size={20} />
+                  <h2 className="text-base sm:text-lg font-bold text-[#122b1c]">
                     What This Means For You ({profile.goal.replace('_', ' ')})
                   </h2>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-slate-500 font-medium">Context Alignment</span>
-                  <p className="text-xl font-bold text-blue-700">{goalAlignment.score}%</p>
+                  <span className="text-[11px] text-[#68796d] font-semibold uppercase tracking-wider block">Context Score</span>
+                  <p className="text-xl font-extrabold text-[#183c27]">{goalAlignment.score}%</p>
                 </div>
               </div>
-              <p className="text-sm text-slate-600 mb-4">
-                "The label tells you WHAT is in the food. NutriForge helps you understand WHAT IT MEANS FOR YOU."
+              <p className="text-xs sm:text-sm text-[#4f5f53] mb-4">
+                &ldquo;The label tells you WHAT is in the food. NutriForge helps you understand WHAT IT MEANS FOR YOU.&rdquo;
               </p>
               <div className="space-y-2">
                 {goalAlignment.notes.map((note, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-sm text-slate-800 bg-white p-3 rounded-xl border border-slate-100">
-                    <CheckCircle2 size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                  <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-[#171d18] bg-white/95 p-3 rounded-xl border border-[#d2ded3] shadow-xs">
+                    <CheckCircle2 size={16} className="text-[#183c27] mt-0.5 shrink-0" />
                     <span>{note}</span>
                   </div>
                 ))}
@@ -508,7 +538,7 @@ export default function ProductAnalysis() {
 
             {/* Quick Macro Snapshot */}
             <div>
-              <h3 className="font-bold text-slate-900 mb-3">Macronutrient Profile (per {consumedAmount}g)</h3>
+              <h3 className="font-bold text-[#122b1c] mb-3 text-sm sm:text-base">Macronutrient Profile (per {consumedAmount}g)</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <MetricBox label="Calories" value={getScaledVal('calories', product.calories)} unit="kcal" badge={getProvenanceBadge('calories')} targetBadge={getTargetBadge('calories')} />
                 <MetricBox label="Protein" value={getScaledVal('protein', product.protein)} unit="g" highlight badge={getProvenanceBadge('protein')} targetBadge={getTargetBadge('protein')} />
@@ -517,9 +547,9 @@ export default function ProductAnalysis() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center bg-blue-50/60 p-4 rounded-xl border border-blue-100 text-sm text-blue-900">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 bg-[#f6f4ee] p-4 rounded-xl border border-[#eae4d5] text-xs sm:text-sm text-[#262f28]">
               <span>Want to test how this changes if you eat a bigger or smaller serving?</span>
-              <button onClick={() => setActiveTab('serving')} className="font-bold underline hover:text-blue-700">
+              <button onClick={() => setActiveTab('serving')} className="font-bold text-[#183c27] hover:underline shrink-0">
                 Open Serving Reality &rarr;
               </button>
             </div>
@@ -1012,24 +1042,24 @@ function MetricBox({
 }) {
   return (
     <div className={`p-4 rounded-xl border transition-all ${
-      highlight ? 'bg-blue-50/80 border-blue-200 shadow-sm' :
-      warning ? 'bg-amber-50/80 border-amber-200' :
-      'bg-slate-50/80 border-slate-200'
+      highlight ? 'bg-[#f5f8f5] border-[#b4c8b6] shadow-xs' :
+      warning ? 'bg-[#fef3c7]/60 border-[#fde68a]' :
+      'bg-[#fcfbf9] border-[#eae4d5]'
     }`}>
       <div className="flex items-center justify-between mb-1">
         <span className={`text-xs font-semibold ${
-          highlight ? 'text-blue-800' :
-          warning ? 'text-amber-800' :
-          'text-slate-600'
+          highlight ? 'text-[#183c27]' :
+          warning ? 'text-[#92400e]' :
+          'text-[#68796d]'
         }`}>{label}</span>
         {badge}
       </div>
       <p className={`text-2xl font-bold ${
-        highlight ? 'text-blue-950' :
-        warning ? 'text-amber-950' :
-        'text-slate-900'
+        highlight ? 'text-[#122b1c]' :
+        warning ? 'text-[#92400e]' :
+        'text-[#171d18]'
       }`}>
-        {value} <span className="text-xs font-normal text-slate-500">{unit}</span>
+        {value} <span className="text-xs font-normal text-[#68796d]">{unit}</span>
       </p>
       {targetBadge}
     </div>

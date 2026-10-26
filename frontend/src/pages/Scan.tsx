@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Search, Barcode, CheckCircle, AlertTriangle, Info, Sparkles, HelpCircle } from 'lucide-react';
+import {
+  Upload,
+  Search,
+  Barcode,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  Sparkles,
+  HelpCircle,
+  FileText
+} from 'lucide-react';
 import { api } from '../services/api';
 import type { Product, ProvenanceInfo } from '../types';
+import { Badge } from '../components/Badge';
 
 interface ScanStatus {
   gemini_configured: boolean;
@@ -175,8 +186,10 @@ export default function Scan() {
         structured_ingredients: editedFields.has('ingredients') ? [] : (extractedData.structured_ingredients || []),
         allergens: extractedData.allergens || [],
         claims: extractedData.claims || [],
-        fssai_information: "Awaiting Verification",
-        evidence: extractedData.is_simulated ? "Simulated demonstration extraction." : `Extracted via Gemini Vision (${extractedData.provider}) and human verified.`,
+        fssai_information: "Awaiting Community Verification",
+        evidence: extractedData.is_simulated
+          ? "Simulated demonstration extraction (Test Provider)."
+          : `Extracted via Gemini Vision (${extractedData.provider}) and human verified.`,
         source_type: "COMMUNITY_VERIFIED",
         image: "placeholder.jpg",
         last_updated: new Date().toISOString()
@@ -200,61 +213,76 @@ export default function Scan() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto pb-16">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">AI Label Scanner & Ingestion</h1>
-        <p className="text-slate-600 text-sm">
-          Extract nutrition facts from packaged food photographs, lookup barcodes, or test demo extractions.
+    <div className="max-w-4xl mx-auto pb-16 space-y-6">
+
+      {/* Editorial Header */}
+      <div className="pb-2 border-b border-[#eae4d5] text-center sm:text-left">
+        <div className="flex items-center gap-2 mb-1.5 justify-center sm:justify-start">
+          <span className="text-[11px] font-bold tracking-wider uppercase text-[#183c27] bg-[#e6ede7] px-2.5 py-0.5 rounded-full border border-[#cfded1]">
+            Computer Vision & Ingestion
+          </span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#122b1c] tracking-tight">
+          Food Label Scanner & Verification
+        </h1>
+        <p className="text-sm text-[#4f5f53] mt-1 max-w-xl mx-auto sm:mx-0">
+          Extract verbatim nutrition facts and ingredients from packaged food packaging photos with human-in-the-loop review.
         </p>
 
-        {/* OCR Engine Live Status Indicator */}
-        <div className="mt-3 flex items-center justify-center gap-2">
+        {/* OCR Engine Status Badge */}
+        <div className="mt-3 flex items-center justify-center sm:justify-start gap-2">
           {scanStatus?.gemini_configured ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <Sparkles size={14} className="text-emerald-500" />
+            <Badge variant="sage" size="sm" icon={<Sparkles size={12} className="text-[#183c27]" />}>
               Live Gemini Vision Active ({scanStatus.model})
-            </span>
+            </Badge>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-              <Info size={14} className="text-amber-500" />
-              Simulated Demo Mode Active (Set GEMINI_API_KEY in backend for live OCR)
-            </span>
+            <Badge variant="amber" size="sm" icon={<Info size={12} className="text-[#92400e]" />}>
+              Simulated Demo Mode Active (Configure GEMINI_API_KEY for live OCR)
+            </Badge>
           )}
         </div>
       </div>
 
-      <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="bg-[#fcfbf9] p-6 md:p-8 rounded-2xl border border-[#eae4d5] shadow-health">
 
+        {/* Loading State */}
         {loading && mode !== 'review' ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-slate-700 font-medium">Extracting label intelligence via Vision AI...</p>
-            <p className="text-xs text-slate-500 mt-1">Analyzing nutrition facts, ingredients, and allergen declarations.</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-12 h-12 border-3 border-[#cfded1] border-t-[#183c27] rounded-full animate-spin mb-4"></div>
+            <p className="text-sm font-bold text-[#122b1c]">Extracting Label Intelligence...</p>
+            <p className="text-xs text-[#68796d] mt-1 max-w-xs">
+              Analyzing printed nutrition facts, ingredients statement, and allergen warnings with provenance validation.
+            </p>
           </div>
         ) : mode === 'barcode' ? (
-          <div>
-            <h2 className="text-lg font-bold mb-2 text-slate-800">Enter Barcode</h2>
-            <p className="text-sm text-slate-500 mb-4">Lookup standard packaged food barcodes in catalog.</p>
+          /* Barcode Input Mode */
+          <div className="space-y-4 max-w-lg mx-auto py-4">
+            <div>
+              <h2 className="text-lg font-bold text-[#122b1c]">Lookup Product by Barcode</h2>
+              <p className="text-xs text-[#68796d] mt-0.5">Enter standard 12 or 13-digit EAN/UPC barcode number.</p>
+            </div>
+
             <form onSubmit={handleBarcodeSubmit} className="space-y-4">
               <input
                 type="text"
                 autoFocus
                 placeholder="e.g. 8901234567890"
-                className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-mono"
+                className="w-full border border-[#ded5c2] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#24593b] focus:border-[#24593b] text-base font-mono bg-white text-[#171d18]"
                 value={barcodeInput}
                 onChange={e => setBarcodeInput(e.target.value)}
               />
-              <div className="flex gap-4">
+
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setMode('select')}
-                  className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+                  className="flex-1 bg-[#f6f4ee] text-[#38453b] py-2.5 rounded-xl text-xs font-semibold hover:bg-[#eae4d5]/50 border border-[#ded5c2] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-500 transition-colors shadow-sm"
+                  className="flex-1 bg-[#183c27] text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-[#122b1c] transition-colors shadow-xs"
                 >
                   Lookup Barcode
                 </button>
@@ -262,46 +290,52 @@ export default function Scan() {
             </form>
           </div>
         ) : mode === 'review' && extractedData ? (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle className="text-emerald-500" size={24} />
-              <h2 className="text-xl font-bold text-slate-900">Review & Verify Extracted Label Data</h2>
+          /* Review & Ingestion Mode */
+          <div className="space-y-6">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-[#eae4d5]">
+              <CheckCircle className="text-[#1a6b41]" size={22} />
+              <div>
+                <h2 className="text-lg font-bold text-[#122b1c]">Review & Verify Extracted Label Facts</h2>
+                <p className="text-xs text-[#68796d]">
+                  Confirm printed values. NutriForge marks unmodified values as Label Declared (LBL) and edited values as Manual (MAN).
+                </p>
+              </div>
             </div>
 
-            {/* Provider and Simulation Tag Banner */}
+            {/* Provider Truth Transparency Banner */}
             {extractedData.is_simulated ? (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-6 text-sm text-amber-900 flex items-start gap-2.5">
-                <Info className="shrink-0 text-amber-600 mt-0.5" size={18} />
+              <div className="p-4 bg-[#fef3c7] border border-[#fde68a] rounded-xl text-xs text-[#92400e] flex items-start gap-3">
+                <Info className="shrink-0 text-[#b45309] mt-0.5" size={18} />
                 <div>
-                  <p className="font-semibold">Simulated Demo OCR Data</p>
-                  <p className="text-xs text-amber-800 mt-0.5">
-                    This sample label was loaded via the test provider. Real images will run through Google Gemini Vision once GEMINI_API_KEY is configured on the backend.
+                  <p className="font-bold">Simulated Demonstration Data</p>
+                  <p className="mt-0.5 text-[#78350f] leading-relaxed">
+                    This sample label extraction was loaded via the local simulated provider. Real photographic scans run through Gemini Vision once GEMINI_API_KEY is configured on the backend.
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl mb-6 text-sm text-emerald-900 flex items-start gap-2.5">
-                <Sparkles className="shrink-0 text-emerald-600 mt-0.5" size={18} />
+              <div className="p-4 bg-[#f5f8f5] border border-[#b4c8b6] rounded-xl text-xs text-[#1e4a31] flex items-start gap-3">
+                <Sparkles className="shrink-0 text-[#183c27] mt-0.5" size={18} />
                 <div>
-                  <p className="font-semibold">Live Gemini Vision Extraction ({extractedData.provider})</p>
-                  <p className="text-xs text-emerald-800 mt-0.5">
-                    Fidelity extraction complete. Visibly printed values are marked as <span className="font-semibold bg-emerald-200/60 px-1 py-0.5 rounded text-emerald-900">LBL (Label Declared)</span>. Any manual corrections will be marked as <span className="font-semibold bg-blue-200/60 px-1 py-0.5 rounded text-blue-900">MAN (Manual Entry)</span>.
+                  <p className="font-bold">Gemini Vision Extraction ({extractedData.provider})</p>
+                  <p className="mt-0.5 text-[#3b523e] leading-relaxed">
+                    Visual extraction completed. Printed metrics are tagged as <strong className="font-semibold text-[#183c27]">LBL (Label Declared)</strong>. Any user corrections will be flagged as <strong className="font-semibold text-[#183c27]">MAN (Manual Entry)</strong> for full provenance.
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Uncertainty and Verification Notices */}
+            {/* Uncertainty Warning if specific fields were flagged */}
             {extractedData.fields_needing_review && extractedData.fields_needing_review.length > 0 && (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-6 text-sm text-yellow-900 flex items-start gap-2.5">
-                <AlertTriangle className="shrink-0 text-yellow-600 mt-0.5" size={18} />
+              <div className="p-4 bg-[#fef3c7] border border-[#fde68a] rounded-xl text-xs text-[#92400e] flex items-start gap-3">
+                <AlertTriangle className="shrink-0 text-[#b45309] mt-0.5" size={18} />
                 <div>
-                  <p className="font-semibold">Human Verification Recommended for Specific Fields</p>
-                  <p className="text-xs text-yellow-800 mt-0.5">
-                    The model flagged potential visual ambiguity or packaging folds for: <strong>{extractedData.fields_needing_review.join(', ')}</strong>. Please review them carefully below.
+                  <p className="font-bold">Human Verification Recommended for Specific Fields</p>
+                  <p className="mt-0.5 text-[#78350f]">
+                    Visual ambiguity or packaging curve flagged for: <strong>{extractedData.fields_needing_review.join(', ')}</strong>. Please verify accuracy against your physical packaging.
                   </p>
                   {extractedData.uncertainty_notes && extractedData.uncertainty_notes.length > 0 && (
-                    <ul className="list-disc list-inside text-xs text-yellow-800 mt-2 space-y-0.5">
+                    <ul className="list-disc list-inside mt-2 space-y-0.5 text-[#78350f]">
                       {extractedData.uncertainty_notes.map((note: string, idx: number) => (
                         <li key={idx}>{note}</li>
                       ))}
@@ -312,66 +346,78 @@ export default function Scan() {
             )}
 
             <form onSubmit={handleReviewSave} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Product Identity */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Product Name {isFieldFlagged('name') && <span className="text-xs text-amber-600 font-semibold">(Verify)</span>}
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#38453b] mb-1.5">
+                    Product Title {isFieldFlagged('name') && <span className="text-[#92400e] font-bold">(Review)</span>}
                   </label>
                   <input
-                    className={`w-full border rounded-lg px-3 py-2 text-sm ${isFieldFlagged('name') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
+                    className={`w-full rounded-xl border px-3.5 py-2 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b] focus:border-[#24593b] ${
+                      isFieldFlagged('name') ? 'border-[#fde68a] bg-[#fef3c7]/20' : 'border-[#ded5c2]'
+                    }`}
                     value={extractedData.name || ''}
                     onChange={e => { setExtractedData({...extractedData, name: e.target.value}); markFieldEdited('name'); }}
-                    placeholder="Enter product title"
+                    placeholder="Product name"
                     required
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Brand {isFieldFlagged('brand') && <span className="text-xs text-amber-600 font-semibold">(Verify)</span>}
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#38453b] mb-1.5">
+                    Brand or Manufacturer {isFieldFlagged('brand') && <span className="text-[#92400e] font-bold">(Review)</span>}
                   </label>
                   <input
-                    className={`w-full border rounded-lg px-3 py-2 text-sm ${isFieldFlagged('brand') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
+                    className={`w-full rounded-xl border px-3.5 py-2 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b] focus:border-[#24593b] ${
+                      isFieldFlagged('brand') ? 'border-[#fde68a] bg-[#fef3c7]/20' : 'border-[#ded5c2]'
+                    }`}
                     value={extractedData.brand || ''}
                     onChange={e => { setExtractedData({...extractedData, brand: e.target.value}); markFieldEdited('brand'); }}
-                    placeholder="Brand or Manufacturer"
+                    placeholder="Brand name"
                     required
                   />
                 </div>
               </div>
 
-              <div className="border-t border-slate-100 pt-4">
-                <h3 className="font-semibold text-slate-800 mb-3">Serving Size</h3>
-                <div className="grid grid-cols-3 gap-4">
+              {/* Serving Size Information */}
+              <div className="pt-4 border-t border-[#eae4d5]">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#122b1c] mb-3">Serving Metrics</h3>
+                <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Mass / Value {isFieldFlagged('serving_size_value') && <span className="text-amber-600 font-bold">*</span>}
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">
+                      Serving Mass / Value {isFieldFlagged('serving_size_value') && <span className="text-[#92400e] font-bold">*</span>}
                     </label>
                     <input
                       type="number"
                       step="any"
-                      className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('serving_size_value') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
+                      className={`w-full rounded-xl border px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b] ${
+                        isFieldFlagged('serving_size_value') ? 'border-[#fde68a] bg-[#fef3c7]/20' : 'border-[#ded5c2]'
+                      }`}
                       value={extractedData.serving_size_value ?? ''}
                       onChange={e => { setExtractedData({...extractedData, serving_size_value: e.target.value}); markFieldEdited('serving'); }}
-                      placeholder="e.g. 30"
+                      placeholder="e.g. 50"
                       required
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Unit</label>
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">Unit</label>
                     <input
                       type="text"
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      className="w-full rounded-xl border border-[#ded5c2] px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b]"
                       value={extractedData.serving_size_unit || 'g'}
                       onChange={e => setExtractedData({...extractedData, serving_size_unit: e.target.value})}
                       required
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">Description</label>
                     <input
                       type="text"
-                      placeholder="e.g. 1 scoop / 1 bar"
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      placeholder="e.g. 1 scoop / 2 biscuits"
+                      className="w-full rounded-xl border border-[#ded5c2] px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b]"
                       value={extractedData.serving_description || ''}
                       onChange={e => setExtractedData({...extractedData, serving_description: e.target.value})}
                     />
@@ -379,233 +425,271 @@ export default function Scan() {
                 </div>
               </div>
 
-              <div className="border-t border-slate-100 pt-4">
-                <h3 className="font-semibold text-slate-800 mb-3 flex items-center justify-between">
-                  <span>Nutrition Facts per Serving</span>
-                  <span className="text-xs font-normal text-slate-500">Unprinted or unreadable fields are left empty</span>
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Nutrition Facts Grid */}
+              <div className="pt-4 border-t border-[#eae4d5]">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#122b1c]">
+                    Declared Nutrients per Serving
+                  </h3>
+                  <span className="text-[11px] text-[#8b9a8f] italic">
+                    Unprinted fields remain blank (never fabricated)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Calories (kcal) {isFieldFlagged('calories') && <span className="text-amber-600 font-bold">*</span>}
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">
+                      Calories (kcal) {isFieldFlagged('calories') && <span className="text-[#92400e] font-bold">*</span>}
                     </label>
                     <input
                       type="number"
                       step="any"
-                      className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('calories') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
+                      className={`w-full rounded-xl border px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b] ${
+                        isFieldFlagged('calories') ? 'border-[#fde68a] bg-[#fef3c7]/20' : 'border-[#ded5c2]'
+                      }`}
                       value={extractedData.calories ?? ''}
                       onChange={e => { setExtractedData({...extractedData, calories: e.target.value}); markFieldEdited('calories'); }}
-                      placeholder="e.g. 150"
+                      placeholder="e.g. 190"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Protein (g) {isFieldFlagged('protein') && <span className="text-amber-600 font-bold">*</span>}
+                    <label className="block text-[11px] font-medium text-[#183c27] font-semibold mb-1">
+                      Protein (g) {isFieldFlagged('protein') && <span className="text-[#92400e] font-bold">*</span>}
                     </label>
                     <input
                       type="number"
                       step="any"
-                      className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('protein') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
+                      className={`w-full rounded-xl border px-3 py-1.5 text-sm bg-white text-[#122b1c] font-semibold focus:outline-none focus:ring-2 focus:ring-[#24593b] ${
+                        isFieldFlagged('protein') ? 'border-[#fde68a] bg-[#fef3c7]/20' : 'border-[#b4c8b6]'
+                      }`}
                       value={extractedData.protein ?? ''}
                       onChange={e => { setExtractedData({...extractedData, protein: e.target.value}); markFieldEdited('protein'); }}
-                      placeholder="e.g. 24"
+                      placeholder="e.g. 15"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Carbohydrates (g) {isFieldFlagged('carbohydrates') && <span className="text-amber-600 font-bold">*</span>}
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">
+                      Carbohydrates (g) {isFieldFlagged('carbohydrates') && <span className="text-[#92400e] font-bold">*</span>}
                     </label>
                     <input
                       type="number"
                       step="any"
-                      className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('carbohydrates') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
+                      className={`w-full rounded-xl border px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b] ${
+                        isFieldFlagged('carbohydrates') ? 'border-[#fde68a] bg-[#fef3c7]/20' : 'border-[#ded5c2]'
+                      }`}
                       value={extractedData.carbohydrates ?? ''}
                       onChange={e => { setExtractedData({...extractedData, carbohydrates: e.target.value}); markFieldEdited('carbohydrates'); }}
-                      placeholder="e.g. 5"
+                      placeholder="e.g. 28"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Total Sugar (g)
-                    </label>
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">Total Sugar (g)</label>
                     <input
                       type="number"
                       step="any"
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      className="w-full rounded-xl border border-[#ded5c2] px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b]"
                       value={extractedData.total_sugar ?? ''}
                       onChange={e => { setExtractedData({...extractedData, total_sugar: e.target.value}); markFieldEdited('total_sugar'); }}
-                      placeholder="e.g. 1.5"
+                      placeholder="e.g. 2"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Added Sugar (g)
-                    </label>
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">Added Sugar (g)</label>
                     <input
                       type="number"
                       step="any"
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      className="w-full rounded-xl border border-[#ded5c2] px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b]"
                       value={extractedData.added_sugar ?? ''}
                       onChange={e => { setExtractedData({...extractedData, added_sugar: e.target.value}); markFieldEdited('added_sugar'); }}
                       placeholder="e.g. 0"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Total Fat (g) {isFieldFlagged('total_fat') && <span className="text-amber-600 font-bold">*</span>}
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">
+                      Total Fat (g) {isFieldFlagged('total_fat') && <span className="text-[#92400e] font-bold">*</span>}
                     </label>
                     <input
                       type="number"
                       step="any"
-                      className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('total_fat') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
+                      className={`w-full rounded-xl border px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b] ${
+                        isFieldFlagged('total_fat') ? 'border-[#fde68a] bg-[#fef3c7]/20' : 'border-[#ded5c2]'
+                      }`}
                       value={extractedData.total_fat ?? ''}
                       onChange={e => { setExtractedData({...extractedData, total_fat: e.target.value}); markFieldEdited('total_fat'); }}
-                      placeholder="e.g. 2"
+                      placeholder="e.g. 3.5"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Sodium (mg) {isFieldFlagged('sodium') && <span className="text-amber-600 font-bold">*</span>}
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">
+                      Sodium (mg) {isFieldFlagged('sodium') && <span className="text-[#92400e] font-bold">*</span>}
                     </label>
                     <input
                       type="number"
                       step="any"
-                      className={`w-full border rounded-lg px-3 py-1.5 text-sm ${isFieldFlagged('sodium') ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'}`}
+                      className={`w-full rounded-xl border px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b] ${
+                        isFieldFlagged('sodium') ? 'border-[#fde68a] bg-[#fef3c7]/20' : 'border-[#ded5c2]'
+                      }`}
                       value={extractedData.sodium ?? ''}
                       onChange={e => { setExtractedData({...extractedData, sodium: e.target.value}); markFieldEdited('sodium'); }}
-                      placeholder="e.g. 120"
+                      placeholder="e.g. 50"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Fibre (g)
-                    </label>
+                    <label className="block text-[11px] font-medium text-[#68796d] mb-1">Dietary Fibre (g)</label>
                     <input
                       type="number"
                       step="any"
-                      className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                      className="w-full rounded-xl border border-[#ded5c2] px-3 py-1.5 text-sm bg-white text-[#171d18] focus:outline-none focus:ring-2 focus:ring-[#24593b]"
                       value={extractedData.fibre ?? ''}
                       onChange={e => { setExtractedData({...extractedData, fibre: e.target.value}); markFieldEdited('fibre'); }}
-                      placeholder="e.g. 3"
+                      placeholder="e.g. 6"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="border-t border-slate-100 pt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Ingredients Statement</label>
+              {/* Ingredients Statement */}
+              <div className="pt-4 border-t border-[#eae4d5]">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <FileText size={15} className="text-[#183c27]" />
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#38453b]">
+                    Printed Ingredients Statement
+                  </label>
+                </div>
                 <textarea
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm h-20"
+                  className="w-full rounded-xl border border-[#ded5c2] px-3.5 py-2.5 text-sm bg-white text-[#171d18] h-24 focus:outline-none focus:ring-2 focus:ring-[#24593b] leading-relaxed"
                   value={extractedData.raw_ingredient_text || ''}
                   placeholder="Verbatim ingredients as printed on packaging"
                   onChange={e => { setExtractedData({...extractedData, raw_ingredient_text: e.target.value}); markFieldEdited('ingredients'); }}
                 />
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-xl flex justify-between items-center mt-6 border border-slate-100">
-                <p className="text-xs text-slate-600">
-                  Saving will ingest this product with verified provenance into NutriForge.
+              {/* Action Bar */}
+              <div className="bg-[#f6f4ee] p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-3 border border-[#eae4d5]">
+                <p className="text-xs text-[#68796d]">
+                  Verification writes this food item to persistent database with source attribution.
                 </p>
-                <div className="flex gap-3">
+                <div className="flex gap-2.5 w-full sm:w-auto justify-end">
                   <button
                     type="button"
                     onClick={() => setMode('select')}
-                    className="px-4 py-2 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-100 text-sm"
+                    className="px-4 py-2 border border-[#ded5c2] rounded-xl font-semibold text-[#4f5f53] hover:bg-[#eae4d5]/50 text-xs transition-colors"
                   >
                     Discard
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 disabled:opacity-50 text-sm shadow-sm"
+                    className="px-6 py-2 bg-[#183c27] text-white rounded-xl font-semibold hover:bg-[#122b1c] disabled:opacity-50 text-xs shadow-xs transition-colors"
                     disabled={loading}
                   >
-                    {loading ? "Saving..." : "Verify & Analyze"}
+                    {loading ? "Ingesting..." : "Verify & Ingest Product"}
                   </button>
                 </div>
               </div>
             </form>
           </div>
         ) : (
+          /* Selection / Main Upload View */
           <div className="space-y-6">
+
+            {/* Error Message Display */}
             {errorMsg && (
-              <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 text-sm flex items-start gap-2">
-                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+              <div className="bg-[#ffe4e6] text-[#9f1239] p-4 rounded-xl border border-[#fecdd3] text-xs flex items-start gap-2.5 shadow-xs">
+                <AlertTriangle size={16} className="shrink-0 mt-0.5 text-[#e11d48]" />
                 <div className="flex-1">
                   <p className="font-semibold">{errorMsg}</p>
                   {keyMissingNotice && (
-                    <div className="mt-2 text-xs text-slate-600 bg-white/80 p-2.5 rounded-lg border border-red-100">
-                      <p className="font-medium text-slate-800 mb-1">To configure live Vision OCR on Windows:</p>
-                      <code className="block bg-slate-100 p-1 rounded font-mono text-[11px] mb-1">
+                    <div className="mt-2 text-xs text-[#4f5f53] bg-white/90 p-3 rounded-lg border border-[#fecdd3]">
+                      <p className="font-semibold text-[#171d18] mb-1">To enable live Gemini Vision OCR:</p>
+                      <code className="block bg-[#f6f4ee] p-1.5 rounded font-mono text-[11px] mb-1.5 text-[#122b1c]">
                         PowerShell: $env:GEMINI_API_KEY="your_api_key_here"
                       </code>
-                      <code className="block bg-slate-100 p-1 rounded font-mono text-[11px] mb-2">
-                        CMD: set GEMINI_API_KEY="your_api_key_here"
-                      </code>
-                      <p>Or test immediately using the simulated demonstration button below.</p>
+                      <p className="text-[11px] text-[#68796d]">
+                        Or test instantly using the simulated demo button below without needing an external API key.
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
+            {/* Ingestion Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-blue-50/20 transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer group">
-                <div className="w-12 h-12 bg-blue-50 group-hover:bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 transition-colors">
-                  <Upload size={24} />
+
+              {/* Photo Upload Zone */}
+              <label className="border-2 border-dashed border-[#b4c8b6] hover:border-[#183c27] hover:bg-[#f5f8f5] transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3.5 cursor-pointer group bg-[#fcfbf9] shadow-xs">
+                <div className="w-12 h-12 bg-[#e6ede7] group-hover:bg-[#183c27] rounded-xl flex items-center justify-center text-[#183c27] group-hover:text-white transition-colors">
+                  <Upload size={22} />
                 </div>
                 <div className="text-center">
-                  <span className="font-bold text-slate-800 block text-base">Upload Food Label Photo</span>
-                  <span className="text-xs text-slate-500 mt-1 block">Supports JPG, PNG, WebP packaging images</span>
+                  <span className="font-bold text-[#122b1c] block text-sm sm:text-base">
+                    Upload Food Label Photo
+                  </span>
+                  <span className="text-xs text-[#68796d] mt-1 block">
+                    Supports JPG, PNG, WebP packaging images up to 10MB
+                  </span>
                 </div>
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </label>
 
+              {/* Barcode Search Zone */}
               <button
                 onClick={() => setMode('barcode')}
-                className="border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50/20 transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3 group"
+                className="border-2 border-[#eae4d5] hover:border-[#183c27] hover:bg-[#f5f8f5] transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3.5 group bg-[#fcfbf9] shadow-xs"
               >
-                <div className="w-12 h-12 bg-slate-50 group-hover:bg-blue-100 rounded-xl flex items-center justify-center text-slate-600 group-hover:text-blue-600 transition-colors">
-                  <Barcode size={24} />
+                <div className="w-12 h-12 bg-[#f6f4ee] group-hover:bg-[#183c27] rounded-xl flex items-center justify-center text-[#38453b] group-hover:text-white transition-colors">
+                  <Barcode size={22} />
                 </div>
                 <div className="text-center">
-                  <span className="font-bold text-slate-800 block text-base">Enter Barcode</span>
-                  <span className="text-xs text-slate-500 mt-1 block">Instant catalog lookup by EAN / UPC code</span>
+                  <span className="font-bold text-[#122b1c] block text-sm sm:text-base">
+                    Enter EAN / UPC Barcode
+                  </span>
+                  <span className="text-xs text-[#68796d] mt-1 block">
+                    Instant catalog lookup by package barcode number
+                  </span>
                 </div>
               </button>
             </div>
 
-            {/* Demo Mode Action Card */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Transparent Demo Mode Option */}
+            <div className="bg-[#f6f4ee] border border-[#eae4d5] rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-3">
-                <HelpCircle size={20} className="text-blue-600 shrink-0" />
+                <div className="p-2 bg-white rounded-lg border border-[#eae4d5] text-[#183c27] shrink-0">
+                  <HelpCircle size={18} />
+                </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-slate-800">Testing without a camera or image?</p>
-                  <p className="text-xs text-slate-500">Run the simulated demo OCR flow to test label review and analysis.</p>
+                  <p className="text-xs sm:text-sm font-bold text-[#122b1c]">
+                    Testing without a physical package?
+                  </p>
+                  <p className="text-xs text-[#68796d]">
+                    Run a simulated label scan to test ingestion review, allergen flags, and serving scaling.
+                  </p>
                 </div>
               </div>
               <button
                 onClick={handleDemoUpload}
-                className="whitespace-nowrap bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-slate-100 transition-colors shadow-xs"
+                className="whitespace-nowrap bg-white border border-[#ded5c2] text-[#262f28] px-3.5 py-2 rounded-xl text-xs font-semibold hover:bg-[#eae4d5]/40 transition-colors shadow-xs"
               >
                 Try Demo Mode (Simulated)
               </button>
             </div>
 
-            <div className="relative pt-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase tracking-wider text-slate-400">
-                <span className="bg-white px-4">Or explore existing catalog</span>
-              </div>
+            {/* Catalog Discovery CTA */}
+            <div className="pt-2 border-t border-[#eae4d5]">
+              <button
+                onClick={() => navigate('/app/products')}
+                className="w-full bg-[#122b1c] text-white font-semibold py-3 rounded-xl hover:bg-[#0a1a11] transition-colors flex justify-center items-center gap-2 text-xs sm:text-sm shadow-health"
+              >
+                <Search size={16} /> Browse Verified Packaged Products
+              </button>
             </div>
-
-            <button
-              onClick={() => navigate('/app/products')}
-              className="w-full bg-slate-900 text-white font-medium py-3 rounded-xl hover:bg-slate-800 transition-colors flex justify-center items-center gap-2 shadow-sm"
-            >
-              <Search size={18} /> Browse Verified Packaged Products
-            </button>
           </div>
         )}
       </div>

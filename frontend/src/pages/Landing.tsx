@@ -1,18 +1,29 @@
 import { Link } from 'react-router-dom';
-import { Activity, ArrowRight, ShieldCheck, Zap, BarChart } from 'lucide-react';
+import { ArrowRight, ShieldCheck, BarChart, User, Sparkles, Scale } from 'lucide-react';
+import { BrandLogo } from '../components/BrandLogo';
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="text-blue-600" size={24} />
-            <span className="font-bold text-xl tracking-tight text-slate-900">NutriForge AI</span>
-          </div>
-          <nav>
-            <Link to="/app" className="text-sm font-medium text-slate-600 hover:text-slate-900 mr-6">
-              Go to App
+    <div className="min-h-screen bg-[#f6f4ee] text-[#171d18] font-sans">
+
+      {/* Editorial Header */}
+      <header className="bg-[#fcfbf9] border-b border-[#eae4d5] sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+          <Link to="/">
+            <BrandLogo variant="light" size="md" />
+          </Link>
+          <nav className="flex items-center gap-4">
+            <Link
+              to="/app"
+              className="text-xs sm:text-sm font-semibold text-[#38453b] hover:text-[#122b1c] transition-colors"
+            >
+              Overview
+            </Link>
+            <Link
+              to="/app"
+              className="bg-[#183c27] hover:bg-[#122b1c] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold shadow-health transition-all"
+            >
+              Launch App
             </Link>
           </nav>
         </div>
@@ -20,83 +31,121 @@ export default function Landing() {
 
       <main>
         {/* Hero Section */}
-        <div className="relative isolate px-6 pt-14 lg:px-8">
-          <div className="mx-auto max-w-2xl py-20 sm:py-24 lg:py-32 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">
-              Understand what your food means for you.
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-slate-600">
-              Turn packaged-food labels into personalized, comparable, and evidence-aware decisions. The label tells you WHAT is in the food. NutriForge helps you understand WHAT it means for you.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Link
-                to="/app/scan"
-                className="rounded-md bg-blue-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-              >
-                Analyze a Product
-              </Link>
-              <Link to="/app" className="text-sm font-semibold leading-6 text-slate-900 flex items-center gap-1">
-                See How It Works <ArrowRight size={16} />
-              </Link>
-            </div>
-            <p className="mt-4 text-xs text-slate-500">
-              Note: NutriForge is a decision-support platform, not a medical diagnostic system.
-            </p>
+        <div className="relative isolate px-6 pt-12 pb-20 lg:px-8 max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e6ede7] border border-[#cfded1] text-[#183c27] text-xs font-semibold mb-6 shadow-xs">
+            <Sparkles size={13} className="text-[#183c27]" />
+            <span>Packaged-Food Intelligence for Gym-Goers & Fitness</span>
           </div>
+
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#122b1c] max-w-4xl mx-auto leading-[1.15]">
+            The label tells you <span className="underline decoration-[#8ea891] decoration-wavy decoration-2">what</span> is in the food. <br className="hidden sm:inline" />
+            NutriForge reveals <span className="text-[#183c27]">what it means for you</span>.
+          </h1>
+
+          <p className="mt-6 text-base sm:text-lg leading-relaxed text-[#4f5f53] max-w-2xl mx-auto font-normal">
+            Turn dense nutrition fact labels, deceptive marketing claims, and hidden ingredients into personalized, comparable, and evidence-grounded fitness decisions.
+          </p>
+
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <Link
+              to="/app/scan"
+              className="w-full sm:w-auto rounded-xl bg-[#183c27] px-6 py-3.5 text-sm font-bold text-white shadow-health-md hover:bg-[#122b1c] transition-all flex items-center justify-center gap-2"
+            >
+              <span>Scan Food Label</span>
+              <ArrowRight size={16} />
+            </Link>
+            <Link
+              to="/app"
+              className="w-full sm:w-auto rounded-xl bg-[#fcfbf9] px-6 py-3.5 text-sm font-semibold text-[#262f28] border border-[#ded5c2] shadow-health hover:bg-[#eae4d5]/40 transition-all flex items-center justify-center gap-2"
+            >
+              <span>Explore Dashboard</span>
+            </Link>
+          </div>
+
+          <p className="mt-5 text-xs text-[#68796d] max-w-md mx-auto">
+            NutriForge AI is an evidence-conscious packaged-food literacy and decision-support tool. It is not a clinical diagnostic system.
+          </p>
         </div>
 
-        {/* Workflow Section */}
-        <div className="bg-white py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-base font-semibold leading-7 text-blue-600">Workflow</h2>
-              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                The NutriForge Process
+        {/* Workflow Grid Section */}
+        <div className="bg-[#fcfbf9] py-16 sm:py-20 border-y border-[#eae4d5]">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="max-w-2xl mx-auto text-center mb-14">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#183c27] bg-[#e6ede7] px-2.5 py-0.5 rounded-full border border-[#cfded1]">
+                System Architecture
+              </span>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold text-[#122b1c] tracking-tight">
+                The NutriForge Intelligence Workflow
+              </h2>
+              <p className="text-sm text-[#4f5f53] mt-2">
+                Four deterministic engines working together with human-in-the-loop verification.
               </p>
             </div>
-            <div className="mx-auto mt-12 max-w-2xl sm:mt-16 lg:mt-20 lg:max-w-none">
-              <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-4">
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                    <UserIcon className="h-6 w-6 text-blue-600" />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+              <div className="bg-[#f6f4ee] p-6 rounded-2xl border border-[#eae4d5] shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-[#e6ede7] text-[#183c27] flex items-center justify-center mb-4 border border-[#cfded1]">
+                    <User size={22} />
                   </div>
-                  <dt className="text-base font-semibold leading-7 text-slate-900">Profile & Scan</dt>
-                  <dd className="mt-1 text-sm leading-6 text-slate-600">Define your goals and scan a product.</dd>
+                  <h3 className="text-base font-bold text-[#122b1c] mb-1.5">Profile & Goal Grounding</h3>
+                  <p className="text-xs text-[#4f5f53] leading-relaxed">
+                    Set your voluntary fitness goals, calorie limits, protein targets, and declared food restrictions.
+                  </p>
                 </div>
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                    <BarChart className="h-6 w-6 text-blue-600" />
+              </div>
+
+              <div className="bg-[#f6f4ee] p-6 rounded-2xl border border-[#eae4d5] shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-[#e6ede7] text-[#183c27] flex items-center justify-center mb-4 border border-[#cfded1]">
+                    <BarChart size={22} />
                   </div>
-                  <dt className="text-base font-semibold leading-7 text-slate-900">Analyze & Check</dt>
-                  <dd className="mt-1 text-sm leading-6 text-slate-600">Deep dive into ingredients and nutrition.</dd>
+                  <h3 className="text-base font-bold text-[#122b1c] mb-1.5">Label Extraction & Review</h3>
+                  <p className="text-xs text-[#4f5f53] leading-relaxed">
+                    Ingest packaging photos via Vision OCR, verify parsed metrics, and tag exact data provenance (LBL vs MAN).
+                  </p>
                 </div>
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                    <ShieldCheck className="h-6 w-6 text-blue-600" />
+              </div>
+
+              <div className="bg-[#f6f4ee] p-6 rounded-2xl border border-[#eae4d5] shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-[#e6ede7] text-[#183c27] flex items-center justify-center mb-4 border border-[#cfded1]">
+                    <ShieldCheck size={22} />
                   </div>
-                  <dt className="text-base font-semibold leading-7 text-slate-900">Compare & Personalize</dt>
-                  <dd className="mt-1 text-sm leading-6 text-slate-600">See how it aligns with your specific needs.</dd>
+                  <h3 className="text-base font-bold text-[#122b1c] mb-1.5">Allergen & Restriction Shield</h3>
+                  <p className="text-xs text-[#4f5f53] leading-relaxed">
+                    Deterministic cross-checking detects direct matches and derivatives with clear medical disclaimer boundaries.
+                  </p>
                 </div>
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                    <Zap className="h-6 w-6 text-blue-600" />
+              </div>
+
+              <div className="bg-[#f6f4ee] p-6 rounded-2xl border border-[#eae4d5] shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-[#e6ede7] text-[#183c27] flex items-center justify-center mb-4 border border-[#cfded1]">
+                    <Scale size={22} />
                   </div>
-                  <dt className="text-base font-semibold leading-7 text-slate-900">Explain & Decide</dt>
-                  <dd className="mt-1 text-sm leading-6 text-slate-600">Get AI-driven insights to make informed choices.</dd>
+                  <h3 className="text-base font-bold text-[#122b1c] mb-1.5">Smart Compare & Trade-Offs</h3>
+                  <p className="text-xs text-[#4f5f53] leading-relaxed">
+                    Transparent side-by-side matrices distinguish unprinted fields from true zeros without artificial single winners.
+                  </p>
                 </div>
-              </dl>
+              </div>
+
             </div>
           </div>
         </div>
       </main>
-    </div>
-  );
-}
 
-function UserIcon(props: any) {
-  return (
-    <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-    </svg>
+      {/* Editorial Footer */}
+      <footer className="bg-[#122b1c] text-[#f5f8f5] py-12 border-t border-[#1a422b]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <BrandLogo variant="dark" size="sm" />
+          <p className="text-xs text-[#8ea891]">
+            &copy; 2026 NutriForge AI &bull; Packaged Food Intelligence Platform
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }

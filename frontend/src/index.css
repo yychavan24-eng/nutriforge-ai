@@ -1,29 +1,100 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #0F172A;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: #334155;
-  --color-secondary-foreground: #F8FAFC;
-  --color-accent: #3B82F6;
-  --color-accent-foreground: #FFFFFF;
-  --color-background: #F8FAFC;
-  --color-foreground: #0F172A;
-  --color-muted: #E2E8F0;
-  --color-muted-foreground: #64748B;
-  --color-border: #E2E8F0;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-destructive: #EF4444;
+  /* Premium Health-Tech Editorial Palette */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Primary Deep Forest Green */
+  --color-forest-950: #0a1a11;
+  --color-forest-900: #122b1c;
+  --color-forest-850: #163623;
+  --color-forest-800: #1a422b;
+  --color-forest-700: #24593b;
+  --color-forest-600: #31744d;
+  --color-forest-500: #3f9061;
+
+  /* Restrained Sage Green Accents */
+  --color-sage-50: #f5f8f5;
+  --color-sage-100: #e6ede7;
+  --color-sage-200: #d2ded3;
+  --color-sage-300: #b4c8b6;
+  --color-sage-400: #8ea891;
+  --color-sage-500: #68856c;
+  --color-sage-600: #4e6a52;
+  --color-sage-700: #3b523e;
+
+  /* Warm Ivory & Natural Canvas */
+  --color-ivory-50: #fcfbf9;
+  --color-ivory-100: #f6f4ee;
+  --color-ivory-150: #f1ede3;
+  --color-ivory-200: #eae4d5;
+  --color-ivory-300: #ded5c2;
+
+  /* Editorial Ink & Text */
+  --color-ink-950: #0e1410;
+  --color-ink-900: #171d18;
+  --color-ink-800: #262f28;
+  --color-ink-700: #38453b;
+  --color-ink-600: #4f5f53;
+  --color-ink-500: #68796d;
+  --color-ink-400: #8b9a8f;
+  --color-ink-300: #b2beb5;
+  --color-ink-200: #d4ded6;
+  --color-ink-100: #edf3ee;
+
+  /* Semantic Health Alert Accents */
+  --color-emerald-clean: #1a6b41;
+  --color-amber-warm: #92400e;
+  --color-rose-subtle: #9f1239;
 }
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    border-color: #eae4d5;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f6f4ee;
+    color: #171d18;
+    font-family: var(--font-sans);
   }
+
+  /* Accessible, restrained focus ring */
+  *:focus-visible {
+    outline: 2px solid #24593b;
+    outline-offset: 2px;
+  }
+}
+
+/* Custom subtle scrollbar for dashboard and comparisons */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4ded6;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b4c8b6;
+}
+
+/* Micro-shadow for health-tech cards */
+.shadow-health {
+  box-shadow: 0 1px 3px 0 rgba(18, 43, 28, 0.04), 0 1px 2px -1px rgba(18, 43, 28, 0.03);
+}
+
+.shadow-health-md {
+  box-shadow: 0 4px 6px -1px rgba(18, 43, 28, 0.05), 0 2px 4px -2px rgba(18, 43, 28, 0.03);
+}
+
+.shadow-health-lg {
+  box-shadow: 0 10px 15px -3px rgba(18, 43, 28, 0.06), 0 4px 6px -4px rgba(18, 43, 28, 0.03);
 }
