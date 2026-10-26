@@ -4,12 +4,13 @@ services:
   # ----------------------------------------------------
   - type: web
     name: nutriforge-backend
-    env: python
+    runtime: python
     region: oregon
     plan: free
     rootDir: backend
     buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -25,8 +26,9 @@ services:
   # ----------------------------------------------------
   # NutriForge AI - React + Vite Frontend Static Site
   # ----------------------------------------------------
-  - type: static_site
+  - type: web
     name: nutriforge-frontend
+    runtime: static
     region: oregon
     plan: free
     rootDir: frontend
