@@ -60,11 +60,19 @@ app = FastAPI(
     description="Personalized Packaged-Food Intelligence & Decision Support Platform"
 )
 
-# Configure CORS for frontend access
+# Configure CORS for frontend access (supports comma-separated ALLOWED_ORIGINS or wildcard)
+allowed_origins_raw = os.environ.get("ALLOWED_ORIGINS", "*")
+if allowed_origins_raw.strip() == "*":
+    cors_origins = ["*"]
+    cors_credentials = False
+else:
+    cors_origins = [o.strip() for o in allowed_origins_raw.split(",") if o.strip()]
+    cors_credentials = True
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins for development
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_credentials=cors_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -221,7 +229,7 @@ def load_db_state():
 
         # Restore Profile
         prof = db.query(ProfileModel).filter(ProfileModel.id == "current_user").first()
-        if prof and prof.goal:
+        if prof:
             CURRENT_PROFILE = {
                 "age": prof.age or "",
                 "height": prof.height or "",
@@ -256,6 +264,16 @@ load_db_state()
 @app.get("/")
 def read_root():
     return {"message": "Welcome to NutriForge AI API - Phase 1"}
+
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "app": "NutriForge AI",
+        "version": "1.0.0",
+        "database": "connected"
+    }
 
 def enrich_product_with_ingredient_intelligence(product_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -308,7 +326,7 @@ def get_profile():
     try:
         db = SessionLocal()
         prof = db.query(ProfileModel).filter(ProfileModel.id == "current_user").first()
-        if prof and prof.goal:
+        if prof:
             CURRENT_PROFILE = {
                 "age": prof.age or "",
                 "height": prof.height or "",
@@ -695,4 +713,5 @@ def get_dashboard():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

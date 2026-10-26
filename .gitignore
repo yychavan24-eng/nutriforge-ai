@@ -29,3 +29,6 @@ Thumbs.db
 # Databases
 *.db
 *.sqlite
+*.sqlite3
+nutriforge.db
+backend/nutriforge.db

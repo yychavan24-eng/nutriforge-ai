@@ -7,14 +7,17 @@ export default function Profile() {
   const { profile, setProfile } = useProfile();
   const [formData, setFormData] = useState<ProfileData>(profile);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setFormData(profile);
   }, [profile]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setProfile(formData);
+    setSaving(true);
+    await setProfile(formData);
+    setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -277,9 +280,10 @@ export default function Profile() {
             )}
             <button 
               type="submit" 
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-500 transition-colors shadow-sm"
+              disabled={saving}
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-500 transition-colors shadow-sm disabled:opacity-50"
             >
-              <Save size={18} /> Save Profile
+              <Save size={18} /> {saving ? "Saving Profile..." : "Save Profile"}
             </button>
           </div>
         </div>

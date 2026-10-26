@@ -27,8 +27,10 @@ export const defaultProfile: ProfileData = {
 
 interface ProfileContextType {
   profile: ProfileData;
-  setProfile: (profile: ProfileData) => void;
+  setProfile: (profile: ProfileData) => Promise<void>;
   isLoading: boolean;
+  error: string | null;
+  reloadProfile: () => Promise<void>;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -54,57 +56,82 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     return defaultProfile;
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sync with backend on initial load if available
-  useEffect(() => {
-    let isMounted = true;
+  // Sync with backend on initial load and keep localStorage fresh
+  const reloadProfile = async () => {
     setIsLoading(true);
-    api.getProfile()
-      .then(res => {
-        if (isMounted && res.data) {
-          // If local storage has data, keep local changes; otherwise sync backend
-          const saved = localStorage.getItem('nutriforge_profile');
-          if (!saved && res.data.goal) {
-            setProfileState({
-              ...defaultProfile,
-              ...res.data,
-              daily_targets: {
-                ...defaultProfile.daily_targets,
-                ...(res.data.daily_targets || {})
-              }
-            });
+    setError(null);
+    try {
+      const res = await api.getProfile();
+      if (res && res.data) {
+        const syncedProfile: ProfileData = {
+          ...defaultProfile,
+          ...res.data,
+          daily_targets: {
+            ...defaultProfile.daily_targets,
+            ...(res.data.daily_targets || {})
           }
+        };
+        setProfileState(syncedProfile);
+        try {
+          localStorage.setItem('nutriforge_profile', JSON.stringify(syncedProfile));
+        } catch (e) {
+          console.error('Failed to sync profile to localStorage', e);
         }
-      })
-      .catch(() => {
-        // Silent fallback to local profile if backend is starting or offline
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+      }
+    } catch (err: any) {
+      console.warn('Backend profile sync note:', err?.message || err);
+      // Keep cached localStorage profile if backend is unreachable
+      setError(err?.message || 'Failed to sync profile from server');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    reloadProfile();
   }, []);
 
-  const setProfile = (newProfile: ProfileData) => {
+  const setProfile = async (newProfile: ProfileData): Promise<void> => {
+    // 1. Immediately update React state for instant UI reaction across all consumers
     setProfileState(newProfile);
+
+    // 2. Immediately cache in localStorage for instant retrieval on refresh/offline
     try {
       localStorage.setItem('nutriforge_profile', JSON.stringify(newProfile));
+      localStorage.setItem('nutriforge_profile_configured', 'true');
     } catch (e) {
       console.error('Failed to save profile to localStorage', e);
     }
 
-    // Persist to backend
-    api.saveProfile(newProfile).catch(err => {
-      console.warn('Backend profile sync note:', err.message);
-    });
+    // 3. Persist to backend database and synchronize confirmation
+    try {
+      const res = await api.saveProfile(newProfile);
+      if (res && res.data) {
+        const confirmedProfile: ProfileData = {
+          ...defaultProfile,
+          ...res.data,
+          daily_targets: {
+            ...defaultProfile.daily_targets,
+            ...(res.data.daily_targets || {})
+          }
+        };
+        setProfileState(confirmedProfile);
+        try {
+          localStorage.setItem('nutriforge_profile', JSON.stringify(confirmedProfile));
+        } catch (e) {
+          console.error('Failed to update localStorage with confirmed profile', e);
+        }
+      }
+    } catch (err: any) {
+      console.warn('Backend profile persistence warning:', err?.message || err);
+    }
   };
 
   return (
-    <ProfileContext.Provider value={{ profile, setProfile, isLoading }}>
+    <ProfileContext.Provider value={{ profile, setProfile, isLoading, error, reloadProfile }}>
       {children}
     </ProfileContext.Provider>
   );
