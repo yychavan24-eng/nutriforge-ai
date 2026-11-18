@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict, Any
 import json
+import time
 
 import os
 from app.schemas import (
@@ -474,6 +475,54 @@ def get_scan_status():
         "max_file_size_mb": 10,
         "provider_name": f"Gemini Vision ({model})" if has_key else "Simulated Mock OCR"
     }
+
+@app.get("/api/scan/verify")
+def verify_gemini_vision():
+    """
+    Lightweight diagnostic probe to verify GEMINI_API_KEY presence,
+    minimal API request authentication, and model response latency
+    without exposing any credentials.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    has_key = bool(api_key)
+    effective_model = get_effective_gemini_model()
+    if not has_key:
+        return {
+            "key_present": False,
+            "auth_status": "MISSING_KEY",
+            "effective_model": effective_model,
+            "message": "GEMINI_API_KEY is not configured in the environment."
+        }
+
+    try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=api_key, http_options={"timeout": 15.0})
+        start_t = time.time()
+        resp = client.models.generate_content(
+            model=effective_model,
+            contents="Respond with the exact word 'PONG'",
+            config=types.GenerateContentConfig(max_output_tokens=10)
+        )
+        elapsed = round(time.time() - start_t, 2)
+        response_text = resp.text.strip() if resp and resp.text else "OK"
+        return {
+            "key_present": True,
+            "auth_status": "AUTHENTICATED",
+            "effective_model": effective_model,
+            "ping_response": response_text,
+            "latency_seconds": elapsed,
+            "message": f"Successfully authenticated and received response from {effective_model}."
+        }
+    except Exception as e:
+        err_msg = str(e)
+        return {
+            "key_present": True,
+            "auth_status": "FAILED",
+            "effective_model": effective_model,
+            "error_type": type(e).__name__,
+            "error_message": err_msg
+        }
 
 @app.post("/api/scan")
 def scan_product(scan_data: ScanRequest):

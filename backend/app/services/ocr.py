@@ -349,9 +349,11 @@ Return ONLY valid JSON matching this structure:
         last_error = None
 
         # Execute extraction with exponential backoff on temporary 503 high-demand spikes
+        attempts_executed = 0
         for attempt in range(3):
+            attempts_executed = attempt + 1
             try:
-                client = genai.Client(api_key=self.api_key)
+                client = genai.Client(api_key=self.api_key, http_options={"timeout": 25.0})
                 response = client.models.generate_content(
                     model=self.model_name,
                     contents=[
@@ -369,7 +371,9 @@ Return ONLY valid JSON matching this structure:
                 last_error = e
                 # Temporary high demand 503: retry with exponential backoff
                 if ("503" in err_msg or "UNAVAILABLE" in err_msg.upper()) and attempt < 2:
-                    time.sleep(2 * (attempt + 1))
+                    backoff_secs = 2 * (attempt + 1)
+                    print(f"[OCR] Attempt {attempts_executed}/3 for model '{self.model_name}' hit 503 UNAVAILABLE. Backoff sleep {backoff_secs}s before retry...")
+                    time.sleep(backoff_secs)
                     continue
                 elif "404" in err_msg or "NOT_FOUND" in err_msg.upper():
                     raise ModelNotFoundError(
@@ -389,7 +393,7 @@ Return ONLY valid JSON matching this structure:
             err_msg = str(last_error) if last_error else "Gemini Vision call failed"
             if "503" in err_msg or "UNAVAILABLE" in err_msg.upper():
                 raise OCRError(
-                    f"Gemini Vision model '{self.model_name}' is currently experiencing temporary high demand from Google. Please retry in a few moments."
+                    f"Gemini Vision model '{self.model_name}' is currently experiencing temporary high demand from Google (executed {attempts_executed} retry attempts): {err_msg}"
                 )
             raise OCRError(f"Gemini Vision call failed: {err_msg}")
 

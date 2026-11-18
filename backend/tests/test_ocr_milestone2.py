@@ -331,6 +331,31 @@ def test_api_scan_status_endpoint():
     assert "supported_formats" in data
     assert "max_file_size_mb" in data
 
+def test_api_scan_verify_endpoint_missing_key():
+    with patch.dict("os.environ", {}, clear=True):
+        resp = client.get("/api/scan/verify")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["key_present"] is False
+        assert data["auth_status"] == "MISSING_KEY"
+        assert "effective_model" in data
+
+@patch("google.genai.Client")
+def test_api_scan_verify_endpoint_authenticated(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client_cls.return_value = mock_client
+    mock_resp = MagicMock()
+    mock_resp.text = "PONG"
+    mock_client.models.generate_content.return_value = mock_resp
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "valid_test_key"}):
+        resp = client.get("/api/scan/verify")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["key_present"] is True
+        assert data["auth_status"] == "AUTHENTICATED"
+        assert data["ping_response"] == "PONG"
+
 def test_api_scan_missing_image():
     resp = client.post("/api/scan", json={})
     assert resp.status_code == 200
