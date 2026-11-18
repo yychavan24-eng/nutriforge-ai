@@ -43,22 +43,25 @@ export default function Scan() {
   const [editedFields, setEditedFields] = useState<Set<string>>(new Set());
   const [scanStatus, setScanStatus] = useState<ScanStatus | null>(null);
 
+  const [failedBarcode, setFailedBarcode] = useState('');
+
   // References
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const scanProcessedRef = useRef(false);
 
   const stopBarcodeScanner = async () => {
     if (html5QrCodeRef.current) {
+      const scanner = html5QrCodeRef.current;
+      html5QrCodeRef.current = null;
       try {
-        if (html5QrCodeRef.current.isScanning) {
-          await html5QrCodeRef.current.stop();
+        if (scanner.isScanning) {
+          await scanner.stop();
         }
-        html5QrCodeRef.current.clear();
+        scanner.clear();
       } catch (err) {
         console.warn('Error stopping barcode scanner:', err);
-      } finally {
-        html5QrCodeRef.current = null;
       }
     }
   };
@@ -75,61 +78,101 @@ export default function Scan() {
   }, []);
 
   const startBarcodeScanner = async () => {
+    scanProcessedRef.current = false;
     setErrorMsg('');
     setSuccessNotice('');
+    setFailedBarcode('');
+
+    // On native Android/iOS devices, ensure camera permission is explicitly granted via native bridge
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const perm = await Camera.checkPermissions();
+        if (perm.camera !== 'granted') {
+          const req = await Camera.requestPermissions({ permissions: ['camera'] });
+          if (req.camera !== 'granted') {
+            setErrorMsg('Camera permission was denied. Please grant camera access in app settings or enter the barcode manually.');
+            setMode('select');
+            return;
+          }
+        }
+      } catch (permErr) {
+        console.warn('Native camera permission check error:', permErr);
+      }
+    }
+
     setMode('live-barcode');
 
-    // Give DOM time to render reader container
-    setTimeout(async () => {
-      try {
-        const container = document.getElementById('barcode-reader-container');
-        if (!container) return;
-
-        const scanner = new Html5Qrcode('barcode-reader-container');
-        html5QrCodeRef.current = scanner;
-
-        const config = {
-          fps: 10,
-          qrbox: { width: 280, height: 160 },
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.UPC_E,
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.QR_CODE
-          ]
-        };
-
-        await scanner.start(
-          { facingMode: 'environment' },
-          config,
-          async (decodedText) => {
-            console.log('Barcode successfully scanned:', decodedText);
-            await stopBarcodeScanner();
-            handleBarcodeLookup(decodedText);
-          },
-          () => {
-            // Frame analysis error (silent while aiming camera)
-          }
-        );
-      } catch (err: any) {
-        console.error('Failed to start live barcode camera:', err);
-        setErrorMsg(
-          err.message?.includes('Permission')
-            ? 'Camera permission was denied. Please grant camera access in app settings or enter the barcode manually.'
-            : 'Unable to access camera for live barcode scanning. Please use manual entry or photo upload.'
-        );
-        setMode('select');
+    // Helper to reliably wait for the container element to mount in the DOM
+    const waitForContainer = async (maxAttempts = 15): Promise<HTMLElement | null> => {
+      for (let i = 0; i < maxAttempts; i++) {
+        const el = document.getElementById('barcode-reader-container');
+        if (el) return el;
+        await new Promise(resolve => setTimeout(resolve, 80));
       }
-    }, 150);
+      return null;
+    };
+
+    try {
+      const container = await waitForContainer();
+      if (!container) {
+        throw new Error('Scanner container failed to mount in the viewport.');
+      }
+
+      // Stop and clean up any lingering scanner instance
+      await stopBarcodeScanner();
+
+      const scanner = new Html5Qrcode('barcode-reader-container');
+      html5QrCodeRef.current = scanner;
+
+      const config = {
+        fps: 10,
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          const width = Math.min(Math.floor(viewfinderWidth * 0.8), 280);
+          const height = Math.min(Math.floor(viewfinderHeight * 0.5), 160);
+          return { width: Math.max(width, 160), height: Math.max(height, 90) };
+        },
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.QR_CODE
+        ]
+      };
+
+      await scanner.start(
+        { facingMode: 'environment' },
+        config,
+        async (decodedText) => {
+          // Guard: prevent duplicate scan processing
+          if (scanProcessedRef.current) return;
+          scanProcessedRef.current = true;
+          console.log('Barcode successfully scanned:', decodedText);
+          await stopBarcodeScanner();
+          handleBarcodeLookup(decodedText);
+        },
+        () => {
+          // Frame analysis error (silent while aiming camera)
+        }
+      );
+    } catch (err: any) {
+      console.error('Failed to start live barcode camera:', err);
+      setErrorMsg(
+        err.message?.includes('Permission')
+          ? 'Camera permission was denied. Please grant camera access in app settings or enter the barcode manually.'
+          : 'Unable to access camera for live barcode scanning. Please use manual entry or photo upload.'
+      );
+      setMode('select');
+    }
   };
 
   const handleBarcodeLookup = async (barcode: string) => {
     const cleanBarcode = barcode.trim();
-    if (!cleanBarcode) return;
+    if (!cleanBarcode || loading) return;
 
+    setFailedBarcode('');
     setLoading(true);
     setLoadingText(`Searching catalog & Open Food Facts for barcode ${cleanBarcode}...`);
     setErrorMsg('');
@@ -150,7 +193,8 @@ export default function Scan() {
         setMode('select');
       }
     } catch {
-      setErrorMsg('Error contacting barcode service. Please check network connection.');
+      setFailedBarcode(cleanBarcode);
+      setErrorMsg('Error contacting barcode service. Please check your network connection and try again.');
       setMode('select');
     } finally {
       setLoading(false);
@@ -436,8 +480,8 @@ export default function Scan() {
             </div>
 
             {/* Scanner Viewport */}
-            <div className="relative overflow-hidden rounded-2xl border-2 border-[#183c27] bg-black aspect-4/3 flex items-center justify-center">
-              <div id="barcode-reader-container" className="w-full h-full"></div>
+            <div className="relative overflow-hidden rounded-2xl border-2 border-[#183c27] bg-black min-h-[300px] flex items-center justify-center">
+              <div id="barcode-reader-container" className="w-full min-h-[300px]"></div>
             </div>
 
             <div className="text-center pt-2">
@@ -822,6 +866,27 @@ export default function Scan() {
                 <AlertTriangle size={16} className="shrink-0 mt-0.5 text-[#e11d48]" />
                 <div className="flex-1">
                   <p className="font-semibold">{errorMsg}</p>
+                  {failedBarcode && (
+                    <div className="mt-2.5 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleBarcodeLookup(failedBarcode)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#9f1239] text-white rounded-lg text-xs font-semibold hover:bg-[#881337] transition-colors shadow-xs"
+                      >
+                        <RefreshCw size={12} /> Retry Lookup ({failedBarcode})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBarcodeInput(failedBarcode);
+                          setMode('barcode');
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#fecdd3] text-[#9f1239] rounded-lg text-xs font-semibold hover:bg-[#ffe4e6] transition-colors"
+                      >
+                        Edit Barcode
+                      </button>
+                    </div>
+                  )}
                   {keyMissingNotice && (
                     <div className="mt-2 text-xs text-[#4f5f53] bg-white/90 p-3 rounded-lg border border-[#fecdd3]">
                       <p className="font-semibold text-[#171d18] mb-1">To enable live Gemini Vision OCR:</p>

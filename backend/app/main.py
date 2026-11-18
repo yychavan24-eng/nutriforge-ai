@@ -560,7 +560,8 @@ def lookup_barcode(barcode: str):
     # 3. Honest response when unavailable
     return {
         "found": False,
-        "message": f"Product with barcode '{barcode}' was not found in the local catalog or Open Food Facts database. Please capture or upload a packaging photo."
+        "source": "NONE",
+        "message": f"Product with barcode '{barcode}' was not found in the local catalog or Open Food Facts database. You can try entering the barcode again or capture a packaging photo."
     }
 
 @app.post("/api/products")

@@ -151,6 +151,38 @@ def test_barcode_endpoint_external_open_food_facts_flow():
     assert data["product"]["ingredient_intelligence"]["total_ingredients"] > 0
 
 
+def test_fetch_open_food_facts_product_missing_nutrients():
+    """Verify that nutrients absent from OFF API are None, not 0."""
+    mock_payload = {
+        "status": 1,
+        "product": {
+            "product_name": "Mystery Food",
+            "brands": "Unknown Brand",
+            "nutriments": {
+                "energy-kcal_100g": 100,
+                "proteins_100g": 5.0,
+                # No carbohydrates, sugar, fat, sodium, fibre at all
+            },
+            "allergens_tags": [],
+        }
+    }
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = mock_payload
+
+    with patch("httpx.Client.get", return_value=mock_response):
+        product = fetch_open_food_facts_product("1111111111111")
+
+    assert product is not None
+    assert product["calories"] == 100.0
+    assert product["protein"] == 5.0
+    assert product["carbohydrates"] is None
+    assert product["total_sugar"] is None
+    assert product["total_fat"] is None
+    assert product["sodium"] is None
+    assert product["fibre"] is None
+
+
 def test_barcode_endpoint_not_found_honest_message():
     with patch("app.main.fetch_open_food_facts_product", return_value=None):
         response = client.get("/api/barcode/9999999999999")
@@ -158,4 +190,5 @@ def test_barcode_endpoint_not_found_honest_message():
     assert response.status_code == 200
     data = response.json()
     assert data["found"] is False
+    assert data["source"] == "NONE"
     assert "Open Food Facts" in data["message"]

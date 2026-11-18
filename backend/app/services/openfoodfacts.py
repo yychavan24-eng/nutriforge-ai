@@ -93,17 +93,25 @@ def fetch_open_food_facts_product(barcode: str, client: Optional[httpx.Client] =
         serving_size_str, serving_val, serving_unit, serving_desc = _parse_serving_size(raw_serving, raw_quantity, raw_unit)
 
         # Nutrients (per 100g default)
-        calories = float(nutriments.get("energy-kcal_100g") or nutriments.get("energy-kcal") or 0.0)
-        protein = float(nutriments.get("proteins_100g") or nutriments.get("proteins") or 0.0)
-        carbs = float(nutriments.get("carbohydrates_100g") or nutriments.get("carbohydrates") or 0.0)
-        sugars = float(nutriments.get("sugars_100g") or nutriments.get("sugars") or 0.0)
-        
-        added_sugars_val = nutriments.get("added-sugars_100g")
-        added_sugars = float(added_sugars_val) if added_sugars_val is not None else 0.0
+        def _get_nutrient(nutriments, *keys):
+            """Return float value for first found key, or None if truly absent."""
+            for key in keys:
+                val = nutriments.get(key)
+                if val is not None:
+                    try:
+                        return round(float(val), 2)
+                    except (ValueError, TypeError):
+                        continue
+            return None
 
-        fat = float(nutriments.get("fat_100g") or nutriments.get("fat") or 0.0)
-        sat_fat = float(nutriments.get("saturated-fat_100g") or nutriments.get("saturated-fat") or 0.0)
-        trans_fat = float(nutriments.get("trans-fat_100g") or nutriments.get("trans-fat") or 0.0)
+        calories = _get_nutrient(nutriments, "energy-kcal_100g", "energy-kcal")
+        protein = _get_nutrient(nutriments, "proteins_100g", "proteins")
+        carbs = _get_nutrient(nutriments, "carbohydrates_100g", "carbohydrates")
+        sugars = _get_nutrient(nutriments, "sugars_100g", "sugars")
+        added_sugars = _get_nutrient(nutriments, "added-sugars_100g")
+        fat = _get_nutrient(nutriments, "fat_100g", "fat")
+        sat_fat = _get_nutrient(nutriments, "saturated-fat_100g", "saturated-fat")
+        trans_fat = _get_nutrient(nutriments, "trans-fat_100g", "trans-fat")
 
         # Sodium: Open Food Facts reports sodium in grams! NutriForge uses mg.
         sodium_g = nutriments.get("sodium_100g")
@@ -111,9 +119,9 @@ def fetch_open_food_facts_product(barcode: str, client: Optional[httpx.Client] =
             sodium_mg = round(float(sodium_g) * 1000.0, 1)
         else:
             salt_g = nutriments.get("salt_100g")
-            sodium_mg = round(float(salt_g) * 400.0, 1) if salt_g is not None else 0.0
+            sodium_mg = round(float(salt_g) * 400.0, 1) if salt_g is not None else None
 
-        fibre = float(nutriments.get("fiber_100g") or nutriments.get("fiber") or 0.0)
+        fibre = _get_nutrient(nutriments, "fiber_100g", "fiber")
 
         # Ingredients text
         raw_ingredient_text = p.get("ingredients_text") or p.get("ingredients_text_en") or ""

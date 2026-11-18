@@ -424,8 +424,12 @@ export default function ProductAnalysis() {
 
       {/* Product Header */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row items-start gap-6">
-        <div className="w-28 h-28 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-medium shrink-0">
-          {product.image}
+        <div className="w-28 h-28 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-medium shrink-0 overflow-hidden">
+          {product.image && (product.image.startsWith('http://') || product.image.startsWith('https://')) ? (
+            <img src={product.image} alt={product.name} className="w-full h-full object-contain p-1" />
+          ) : (
+            <span className="text-xs text-center p-2 text-slate-400">{product.image || 'No image'}</span>
+          )}
         </div>
         <div className="flex-1">
           <div className="flex flex-col md:flex-row justify-between items-start gap-2">
@@ -450,6 +454,12 @@ export default function ProductAnalysis() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-4 text-sm">
+            {product.barcode && product.barcode !== 'unknown' && (
+              <div className="bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 font-medium">Barcode</p>
+                <p className="font-semibold text-slate-900 font-mono">{product.barcode}</p>
+              </div>
+            )}
             <div className="bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
               <p className="text-xs text-slate-500 font-medium">Declared Serving</p>
               <p className="font-semibold text-slate-900">{product.serving_size}</p>
@@ -553,6 +563,72 @@ export default function ProductAnalysis() {
               </div>
             </div>
 
+            {/* Declared Allergens Card */}
+            <div className="bg-[#fcfbf9] border border-[#eae4d5] rounded-xl p-5 shadow-xs">
+              <h3 className="font-bold text-[#122b1c] mb-2 text-sm sm:text-base flex items-center gap-2">
+                <ShieldCheck size={18} className="text-[#183c27]" /> Declared Allergen Information
+              </h3>
+              {product.allergens && product.allergens.length > 0 ? (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {product.allergens.map((alg, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-amber-50 text-amber-900 border border-amber-200 rounded-lg text-xs font-semibold">
+                      {alg}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[#68796d] italic mb-3">
+                  No specific allergen tags reported on this product record.
+                </p>
+              )}
+              <p className="text-[11px] text-[#68796d] bg-white p-2.5 rounded-lg border border-[#eae4d5] leading-relaxed">
+                <strong className="text-[#122b1c]">Important Safety Notice:</strong> Automated allergen detection and database records do not guarantee food safety. Physical packaging may carry unlisted traces or manufacturing facility cross-contamination. Always inspect the physical packaging label before consumption.
+              </p>
+            </div>
+
+            {/* Ingredients Statement Preview */}
+            {product.raw_ingredient_text && (
+              <div className="bg-[#fcfbf9] border border-[#eae4d5] rounded-xl p-5 shadow-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-[#122b1c] text-sm sm:text-base flex items-center gap-2">
+                    <FileText size={18} className="text-[#183c27]" /> Ingredient Statement
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab('ingredients')}
+                    className="text-xs font-semibold text-[#183c27] hover:underline"
+                  >
+                    View Scientific Breakdown &rarr;
+                  </button>
+                </div>
+                <p className="text-xs sm:text-sm text-[#38453b] bg-white p-3 rounded-lg border border-[#eae4d5] leading-relaxed">
+                  {product.raw_ingredient_text}
+                </p>
+              </div>
+            )}
+
+            {/* Data Source & Provenance */}
+            <div className="bg-[#fcfbf9] border border-[#eae4d5] rounded-xl p-5 shadow-xs">
+              <h3 className="font-bold text-[#122b1c] mb-2 text-sm sm:text-base flex items-center gap-2">
+                <Info size={18} className="text-[#183c27]" /> Product Data Source
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-white rounded-lg border border-[#eae4d5]">
+                  <span className="text-[#68796d] block mb-0.5">Database / Authority</span>
+                  <span className="font-bold text-[#122b1c]">
+                    {product.source_type === 'EXTERNAL_EVIDENCE' ? 'Open Food Facts' : (product.source_type || 'Verified Catalog')}
+                  </span>
+                </div>
+                <div className="p-3 bg-white rounded-lg border border-[#eae4d5]">
+                  <span className="text-[#68796d] block mb-0.5">Barcode</span>
+                  <span className="font-mono font-bold text-[#122b1c]">{product.barcode || 'N/A'}</span>
+                </div>
+                <div className="p-3 bg-white rounded-lg border border-[#eae4d5]">
+                  <span className="text-[#68796d] block mb-0.5">Record Verification</span>
+                  <span className="text-[#38453b]">{product.evidence || 'Standard catalog entry'}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row justify-between items-center gap-2 bg-[#f6f4ee] p-4 rounded-xl border border-[#eae4d5] text-xs sm:text-sm text-[#262f28]">
               <span>Want to test how this changes if you eat a bigger or smaller serving?</span>
               <button onClick={() => setActiveTab('serving')} className="font-bold text-[#183c27] hover:underline shrink-0">
@@ -599,7 +675,7 @@ export default function ProductAnalysis() {
               <MetricBox label="Protein" value={getScaledVal('protein', product.protein)} unit="g" highlight badge={getProvenanceBadge('protein')} targetBadge={getTargetBadge('protein')} />
               <MetricBox label="Carbohydrates" value={getScaledVal('carbohydrates', product.carbohydrates)} unit="g" badge={getProvenanceBadge('carbohydrates')} targetBadge={getTargetBadge('carbohydrates')} />
               <MetricBox label="Total Sugar" value={getScaledVal('total_sugar', product.total_sugar)} unit="g" badge={getProvenanceBadge('total_sugar')} targetBadge={getTargetBadge('total_sugar')} />
-              <MetricBox label="Added Sugar" value={getScaledVal('added_sugar', product.added_sugar)} unit="g" warning={(product.added_sugar * multiplier) > 5} badge={getProvenanceBadge('added_sugar')} targetBadge={getTargetBadge('added_sugar')} />
+              <MetricBox label="Added Sugar" value={getScaledVal('added_sugar', product.added_sugar)} unit="g" warning={Boolean(product.added_sugar != null && (product.added_sugar * multiplier) > 5)} badge={getProvenanceBadge('added_sugar')} targetBadge={getTargetBadge('added_sugar')} />
               <MetricBox label="Total Fat" value={getScaledVal('total_fat', product.total_fat)} unit="g" badge={getProvenanceBadge('total_fat')} targetBadge={getTargetBadge('total_fat')} />
               <MetricBox label="Saturated Fat" value={getScaledVal('saturated_fat', product.saturated_fat)} unit="g" badge={getProvenanceBadge('saturated_fat')} targetBadge={getTargetBadge('saturated_fat')} />
               <MetricBox label="Trans Fat" value={getScaledVal('trans_fat', product.trans_fat)} unit="g" badge={getProvenanceBadge('trans_fat')} />
@@ -721,6 +797,24 @@ export default function ProductAnalysis() {
                 <span className="text-slate-500 text-xs block">Dietary Preference</span>
                 <span className="font-semibold text-slate-800 capitalize">{profile.dietaryPreference.replace('_', ' ')}</span>
               </div>
+            </div>
+
+            {/* Manufacturer Declared Allergens */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+                Reported Allergen Tags on Packaging
+              </h3>
+              {product.allergens && product.allergens.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {product.allergens.map((alg, i) => (
+                    <span key={i} className="px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200 rounded-lg text-xs font-semibold">
+                      {alg}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic">No specific allergens reported in this product record.</p>
+              )}
             </div>
 
             {/* Conflict List */}
@@ -1065,7 +1159,7 @@ function MetricBox({
         warning ? 'text-[#92400e]' :
         'text-[#171d18]'
       }`}>
-        {value} <span className="text-xs font-normal text-[#68796d]">{unit}</span>
+        {value} {value !== '—' && <span className="text-xs font-normal text-[#68796d]">{unit}</span>}
       </p>
       {targetBadge}
     </div>

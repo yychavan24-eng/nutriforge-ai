@@ -38,16 +38,16 @@ class ProductBase(BaseModel):
     serving_description: str = ""
 
     # Nutrition
-    calories: Optional[float] = 0.0
-    protein: Optional[float] = 0.0
-    carbohydrates: Optional[float] = 0.0
-    total_sugar: Optional[float] = 0.0
-    added_sugar: Optional[float] = 0.0
-    total_fat: Optional[float] = 0.0
-    saturated_fat: Optional[float] = 0.0
-    trans_fat: Optional[float] = 0.0
-    sodium: Optional[float] = 0.0
-    fibre: Optional[float] = 0.0
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    total_sugar: Optional[float] = None
+    added_sugar: Optional[float] = None
+    total_fat: Optional[float] = None
+    saturated_fat: Optional[float] = None
+    trans_fat: Optional[float] = None
+    sodium: Optional[float] = None
+    fibre: Optional[float] = None
 
     # Metadata
     provenance: Dict[str, ProvenanceInfo] = {}
