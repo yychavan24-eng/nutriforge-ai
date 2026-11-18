@@ -120,6 +120,8 @@ class ScanStatusResponse(BaseModel):
     supported_formats: List[str]
     max_file_size_mb: int
     provider_name: str
+    generation_available: Optional[bool] = False
+    quota_exhausted: Optional[bool] = False
 
 class RecheckRequest(BaseModel):
     product_id: str

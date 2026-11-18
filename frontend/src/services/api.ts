@@ -85,6 +85,8 @@ export const api = {
     supported_formats: string[];
     max_file_size_mb: number;
     provider_name: string;
+    generation_available?: boolean;
+    quota_exhausted?: boolean;
   }> {
     const res = await fetch(`${API_BASE_URL}/api/scan/status`);
     return handleResponse(res);
@@ -103,6 +105,7 @@ export const api = {
     provider?: string;
     fields_needing_review?: string[];
     uncertainty_notes?: string[];
+    quota_exhausted?: boolean;
   }> {
     const res = await fetch(`${API_BASE_URL}/api/scan`, {
       method: 'POST',

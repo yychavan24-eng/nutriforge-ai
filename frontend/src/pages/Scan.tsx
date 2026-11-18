@@ -29,6 +29,8 @@ interface ScanStatus {
   supported_formats: string[];
   max_file_size_mb: number;
   provider_name: string;
+  generation_available?: boolean;
+  quota_exhausted?: boolean;
 }
 
 export default function Scan() {
@@ -41,6 +43,7 @@ export default function Scan() {
   const [successNotice, setSuccessNotice] = useState('');
   const [keyMissingNotice, setKeyMissingNotice] = useState(false);
   const [modelUnavailableNotice, setModelUnavailableNotice] = useState(false);
+  const [quotaExhaustedNotice, setQuotaExhaustedNotice] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [editedFields, setEditedFields] = useState<Set<string>>(new Set());
   const [scanStatus, setScanStatus] = useState<ScanStatus | null>(null);
@@ -71,7 +74,12 @@ export default function Scan() {
   useEffect(() => {
     // Check backend OCR configuration status
     api.getScanStatus()
-      .then(status => setScanStatus(status))
+      .then(status => {
+        setScanStatus(status);
+        if (status?.quota_exhausted) {
+          setQuotaExhaustedNotice(true);
+        }
+      })
       .catch(() => setScanStatus(null));
 
     return () => {
@@ -216,7 +224,7 @@ export default function Scan() {
     setErrorMsg('');
     setKeyMissingNotice(false);
     setModelUnavailableNotice(false);
-    setModelUnavailableNotice(false);
+    setQuotaExhaustedNotice(false);
 
     try {
       const data = await api.scanLabel(base64Data, false);
@@ -224,6 +232,11 @@ export default function Scan() {
         setExtractedData(data.extracted_data);
         setEditedFields(new Set());
         setMode('review');
+      } else if (data.error_code === 'RATE_LIMIT' || data.error_code === 'RESOURCE_EXHAUSTED' || data.quota_exhausted) {
+        setErrorMsg(data.message || 'Google Gemini Free Tier daily generation quota is exhausted (429 RESOURCE_EXHAUSTED).');
+        setQuotaExhaustedNotice(true);
+        setScanStatus(prev => prev ? { ...prev, generation_available: false, quota_exhausted: true } : null);
+        setMode('select');
       } else if (data.error_code === 'GEMINI_API_KEY_MISSING') {
         setErrorMsg(data.message || 'Gemini API key is not configured on the backend.');
         setKeyMissingNotice(true);
@@ -245,13 +258,20 @@ export default function Scan() {
       }
     } catch (err: any) {
       const msg = err.message || 'Error contacting OCR service.';
-      setErrorMsg(msg);
-      if (msg.includes('404') || msg.includes('NOT_FOUND') || msg.includes('no longer available')) {
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota') || msg.includes('Rate limit') || msg.includes('RATE_LIMIT')) {
+        setErrorMsg('Google Gemini Free Tier daily generation quota is exhausted (429 RESOURCE_EXHAUSTED). Free tier daily limit (20 req/day) on gemini-3.8-flash has been reached.');
+        setQuotaExhaustedNotice(true);
+        setScanStatus(prev => prev ? { ...prev, generation_available: false, quota_exhausted: true } : null);
+      } else if (msg.includes('404') || msg.includes('NOT_FOUND') || msg.includes('no longer available')) {
+        setErrorMsg(msg);
         setModelUnavailableNotice(true);
-        setScanStatus(prev => prev ? { ...prev, gemini_configured: false } : null);
+        setScanStatus(prev => prev ? { ...prev, gemini_configured: false, generation_available: false } : null);
       } else if (msg.includes('401') || msg.includes('403') || msg.includes('API_KEY_INVALID') || msg.includes('API key')) {
+        setErrorMsg(msg);
         setKeyMissingNotice(true);
-        setScanStatus(prev => prev ? { ...prev, gemini_configured: false } : null);
+        setScanStatus(prev => prev ? { ...prev, gemini_configured: false, generation_available: false } : null);
+      } else {
+        setErrorMsg(msg);
       }
       setMode('select');
     } finally {
@@ -404,9 +424,9 @@ export default function Scan() {
         claims: extractedData.claims || [],
         fssai_information: 'Awaiting Community Verification',
         evidence: extractedData.is_simulated
-          ? 'Simulated demonstration extraction (Test Provider).'
+          ? 'Simulated demonstration label data (not from physical package).'
           : `Extracted via Gemini Vision (${extractedData.provider}) and human verified.`,
-        source_type: 'COMMUNITY_VERIFIED',
+        source_type: extractedData.is_simulated ? 'SIMULATED_DEMO' : 'COMMUNITY_VERIFIED',
         image: 'placeholder.jpg',
         last_updated: new Date().toISOString()
       };
@@ -468,13 +488,17 @@ export default function Scan() {
             <Badge variant="amber" size="sm" icon={<AlertCircle size={12} className="text-[#92400e]" />}>
               Connecting to OCR Backend...
             </Badge>
-          ) : scanStatus.gemini_configured && scanStatus.model && !scanStatus.model.includes('2.5') ? (
+          ) : scanStatus.gemini_configured && scanStatus.generation_available && !quotaExhaustedNotice && !scanStatus.quota_exhausted ? (
             <Badge variant="sage" size="sm" icon={<Sparkles size={12} className="text-[#183c27]" />}>
               Live Gemini Vision Active ({scanStatus.model})
             </Badge>
-          ) : scanStatus.gemini_configured && scanStatus.model?.includes('2.5') ? (
+          ) : scanStatus.gemini_configured && (scanStatus.quota_exhausted || quotaExhaustedNotice) ? (
             <Badge variant="amber" size="sm" icon={<AlertTriangle size={12} className="text-[#b45309]" />}>
-              Gemini Model Deprecated ({scanStatus.model} — Backend Update Required)
+              Gemini Configured ({scanStatus.model}) • Quota Exhausted (429)
+            </Badge>
+          ) : scanStatus.gemini_configured && !scanStatus.generation_available ? (
+            <Badge variant="amber" size="sm" icon={<AlertTriangle size={12} className="text-[#b45309]" />}>
+              Gemini Configured ({scanStatus.model}) • Generation Unavailable
             </Badge>
           ) : (
             <Badge variant="amber" size="sm" icon={<Info size={12} className="text-[#92400e]" />}>
@@ -595,8 +619,15 @@ export default function Scan() {
           <div className="space-y-6">
             <div className="flex items-center gap-2.5 pb-3 border-b border-[#eae4d5]">
               <CheckCircle className="text-[#1a6b41]" size={22} />
-              <div>
-                <h2 className="text-lg font-bold text-[#122b1c]">Review & Verify Extracted Label Facts</h2>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg font-bold text-[#122b1c]">Review & Verify Extracted Label Facts</h2>
+                  {extractedData.is_simulated && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#fef3c7] text-[#92400e] border border-[#fde68a]">
+                      Simulated Demonstration Result
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-[#68796d]">
                   Confirm printed values. NutriForge marks unmodified values as Label Declared (LBL) and edited values as Manual (MAN).
                 </p>
@@ -607,10 +638,15 @@ export default function Scan() {
             {extractedData.is_simulated ? (
               <div className="p-4 bg-[#fef3c7] border border-[#fde68a] rounded-xl text-xs text-[#92400e] flex items-start gap-3">
                 <Info className="shrink-0 text-[#b45309] mt-0.5" size={18} />
-                <div>
-                  <p className="font-bold">Simulated Demonstration Data</p>
-                  <p className="mt-0.5 text-[#78350f] leading-relaxed">
-                    This sample label extraction was loaded via the local simulated provider. Real photographic scans run through Gemini Vision once GEMINI_API_KEY is configured on the backend.
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-sm text-[#92400e]">Simulated Demonstration Extraction</p>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#fde68a] text-[#78350f]">
+                      Simulated
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[#78350f] leading-relaxed">
+                    <strong>Notice:</strong> This is simulated demonstration data loaded for pipeline evaluation. {scanStatus?.gemini_configured ? `Gemini API key is configured (${scanStatus.model}), but live generation is currently unavailable due to upstream Free Tier daily quota exhaustion (429 RESOURCE_EXHAUSTED).` : 'To perform live OCR with physical packages, configure GEMINI_API_KEY on the backend.'} All nutritional metrics for this product will be recorded with provenance tag <strong>SIMULATED_DEMO</strong>.
                   </p>
                 </div>
               </div>
@@ -883,7 +919,7 @@ export default function Scan() {
                     className="px-6 py-2 bg-[#183c27] text-white rounded-xl font-semibold hover:bg-[#122b1c] disabled:opacity-50 text-xs shadow-xs transition-colors"
                     disabled={loading}
                   >
-                    {loading ? 'Ingesting...' : 'Verify & Ingest Product'}
+                    {loading ? 'Ingesting...' : extractedData.is_simulated ? 'Verify & Ingest Simulated Product' : 'Verify & Ingest Product'}
                   </button>
                 </div>
               </div>
@@ -953,6 +989,58 @@ export default function Scan() {
                       </p>
                     </div>
                   )}
+                  {(quotaExhaustedNotice || scanStatus?.quota_exhausted) && (
+                    <div className="mt-2.5 text-xs text-[#78350f] bg-white/95 p-3.5 rounded-lg border border-[#fde68a]">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle size={15} className="text-[#b45309] shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-[#92400e]">
+                            Gemini Generation Quota Exhausted (429 RESOURCE_EXHAUSTED)
+                          </p>
+                          <p className="mt-1 text-[#78350f] leading-relaxed">
+                            Google Free Tier limits generation to <strong>20 requests per day</strong> for <code>{scanStatus?.model || 'gemini-3.8-flash'}</code>. The API key is verified, but daily generation quota has been exceeded on Google's servers.
+                          </p>
+                          <p className="mt-1 text-[#78350f]">
+                            Live barcode scanning and Open Food Facts lookup remain <strong>100% operational</strong>. You can also test the full nutrition pipeline with Simulated Demo Mode.
+                          </p>
+                          <div className="mt-2.5 flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={handleDemoUpload}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#92400e] text-white rounded-lg text-xs font-semibold hover:bg-[#78350f] transition-colors shadow-xs"
+                            >
+                              <Sparkles size={12} /> Test Simulated Demo Mode
+                            </button>
+                            <button
+                              type="button"
+                              onClick={startBarcodeScanner}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#183c27] text-white rounded-lg text-xs font-semibold hover:bg-[#122b1c] transition-colors shadow-xs"
+                            >
+                              <RefreshCw size={12} /> Live Barcode Scanner
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Informative quota notice if backend reports quota exhausted */}
+            {!errorMsg && scanStatus?.quota_exhausted && (
+              <div className="bg-[#fffbeb] text-[#78350f] p-4 rounded-xl border border-[#fde68a] text-xs flex items-start gap-3 shadow-xs">
+                <AlertCircle size={18} className="shrink-0 mt-0.5 text-[#b45309]" />
+                <div className="flex-1">
+                  <p className="font-bold text-[#92400e] text-sm">
+                    Gemini API Configured • Free Tier Daily Quota Exhausted (429)
+                  </p>
+                  <p className="mt-1 text-[#78350f] leading-relaxed">
+                    Google Cloud Free Tier limits requests to 20 per day for <code>{scanStatus?.model || 'gemini-3.8-flash'}</code>. Live camera photo OCR generation is paused until Google resets the daily quota.
+                  </p>
+                  <p className="mt-1 text-[#78350f] font-medium">
+                    Barcode scanning and Open Food Facts catalog lookup are <strong>active and working</strong>. You can also evaluate label ingestion using <strong>Simulated Demo Mode</strong> below.
+                  </p>
                 </div>
               </div>
             )}

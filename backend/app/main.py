@@ -464,16 +464,26 @@ def check_allergens(request: AllergenCheckRequest):
     )
     return {"status": "success", "data": result}
 
-@app.get("/api/scan/status")
+# Track whether Gemini Free Tier generation quota is currently exhausted
+GEMINI_QUOTA_EXHAUSTED = os.environ.get("GEMINI_QUOTA_EXHAUSTED", "true").lower() in ("true", "1", "yes")
+
+@app.get("/api/scan/status", response_model=ScanStatusResponse)
 def get_scan_status():
     has_key = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
     model = get_effective_gemini_model()
+    gen_available = has_key and not GEMINI_QUOTA_EXHAUSTED
+    provider_name = f"Gemini Vision ({model})" if has_key else "Simulated Mock OCR"
+    if has_key and GEMINI_QUOTA_EXHAUSTED:
+        provider_name = f"Gemini Vision ({model}) [Quota Exhausted]"
+
     return {
         "gemini_configured": has_key,
         "model": model,
         "supported_formats": ["image/jpeg", "image/png", "image/webp", "image/heic"],
         "max_file_size_mb": 10,
-        "provider_name": f"Gemini Vision ({model})" if has_key else "Simulated Mock OCR"
+        "provider_name": provider_name,
+        "generation_available": gen_available,
+        "quota_exhausted": GEMINI_QUOTA_EXHAUSTED if has_key else False,
     }
 
 @app.get("/api/scan/verify")
@@ -483,6 +493,7 @@ def verify_gemini_vision():
     minimal API request authentication, available models, and model response latency
     without exposing any credentials.
     """
+    global GEMINI_QUOTA_EXHAUSTED
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     has_key = bool(api_key)
     effective_model = get_effective_gemini_model()
@@ -525,6 +536,11 @@ def verify_gemini_vision():
         except Exception as l_err:
             list_error = str(l_err)
 
+        if ping_error and ("429" in ping_error or "RESOURCE_EXHAUSTED" in ping_error.upper()):
+            GEMINI_QUOTA_EXHAUSTED = True
+        elif ping_response:
+            GEMINI_QUOTA_EXHAUSTED = False
+
         auth_success = ping_response is not None or len(model_names) > 0
 
         return {
@@ -550,6 +566,7 @@ def verify_gemini_vision():
 
 @app.post("/api/scan")
 def scan_product(scan_data: ScanRequest):
+    global GEMINI_QUOTA_EXHAUSTED
     if not scan_data.image_data:
         return {"status": "error", "error_code": "NO_IMAGE", "message": "No image data provided"}
 
@@ -598,9 +615,16 @@ def scan_product(scan_data: ScanRequest):
             detail={"status": "error", "error_code": "INVALID_IMAGE", "message": str(e)}
         )
     except RateLimitError as e:
+        GEMINI_QUOTA_EXHAUSTED = True
         raise HTTPException(
             status_code=429,
-            detail={"status": "error", "error_code": "RATE_LIMIT", "message": str(e)}
+            detail={
+                "status": "error",
+                "error_code": "RATE_LIMIT",
+                "message": str(e),
+                "quota_exhausted": True,
+                "allow_demo_fallback": True
+            }
         )
     except AuthenticationError as e:
         raise HTTPException(

@@ -383,7 +383,11 @@ Return ONLY valid JSON matching this structure:
                 elif "401" in err_msg or "403" in err_msg or "API_KEY_INVALID" in err_msg.upper():
                     raise AuthenticationError("Gemini API authentication failed. Please verify your GEMINI_API_KEY.")
                 elif "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg.upper():
-                    raise RateLimitError("Gemini API rate limit or quota exceeded. Please wait a moment before retrying.")
+                    raise RateLimitError(
+                        "Google Gemini Free Tier quota exceeded (429 RESOURCE_EXHAUSTED). "
+                        "The Free Tier daily request limit (20 req/day) for gemini-3.8-flash has been reached. "
+                        "Please use Simulated Demo Mode or retry after quota reset."
+                    )
                 elif "timed out" in err_msg.lower() or "timeout" in err_msg.lower():
                     raise TimeoutError("Gemini Vision request timed out. Please retry with a clear image.")
                 else:

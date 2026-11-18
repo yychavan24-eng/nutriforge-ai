@@ -445,6 +445,10 @@ export default function ProductAnalysis() {
                 <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold">
                   Open Food Facts
                 </span>
+              ) : product.source_type === 'SIMULATED_DEMO' ? (
+                <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full font-semibold">
+                  Simulated Demo
+                </span>
               ) : (
                 <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">
                   {product.source_type || 'VERIFIED'}
@@ -615,7 +619,7 @@ export default function ProductAnalysis() {
                 <div className="p-3 bg-white rounded-lg border border-[#eae4d5]">
                   <span className="text-[#68796d] block mb-0.5">Database / Authority</span>
                   <span className="font-bold text-[#122b1c]">
-                    {product.source_type === 'EXTERNAL_EVIDENCE' ? 'Open Food Facts' : (product.source_type || 'Verified Catalog')}
+                    {product.source_type === 'EXTERNAL_EVIDENCE' ? 'Open Food Facts' : product.source_type === 'SIMULATED_DEMO' ? 'Simulated Demonstration' : (product.source_type || 'Verified Catalog')}
                   </span>
                 </div>
                 <div className="p-3 bg-white rounded-lg border border-[#eae4d5]">
@@ -1104,7 +1108,7 @@ export default function ProductAnalysis() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <span className="text-xs text-slate-500 block mb-1">Source Type</span>
-                <span className="font-bold text-slate-900">{product.source_type || 'COMMUNITY_VERIFIED'}</span>
+                <span className="font-bold text-slate-900">{product.source_type === 'SIMULATED_DEMO' ? 'SIMULATED_DEMO (Demonstration)' : (product.source_type || 'COMMUNITY_VERIFIED')}</span>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <span className="text-xs text-slate-500 block mb-1">FSSAI License</span>
