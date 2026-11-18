@@ -25,6 +25,7 @@ MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB limit
 
 DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 RETIRED_GEMINI_MODELS = {"gemini-2.5-flash", "models/gemini-2.5-flash"}
+FALLBACK_GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"]
 
 def get_effective_gemini_model(model_name: Optional[str] = None) -> str:
     """
@@ -344,32 +345,55 @@ Return ONLY valid JSON matching this structure:
         except ImportError:
             raise OCRError("The 'google-genai' package is not installed. Please run: pip install google-genai")
 
-        try:
-            client = genai.Client(api_key=self.api_key)
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=[
-                    types.Part.from_bytes(data=raw_bytes, mime_type=mime_type),
-                    self.EXTRACTION_PROMPT
-                ],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.1
+        # Candidate models with primary model first, followed by fallbacks for high-demand spikes
+        candidate_models = [self.model_name]
+        for fb in FALLBACK_GEMINI_MODELS:
+            if fb not in candidate_models:
+                candidate_models.append(fb)
+
+        response = None
+        last_error = None
+        model_used = self.model_name
+
+        for model_candidate in candidate_models:
+            try:
+                client = genai.Client(api_key=self.api_key)
+                response = client.models.generate_content(
+                    model=model_candidate,
+                    contents=[
+                        types.Part.from_bytes(data=raw_bytes, mime_type=mime_type),
+                        self.EXTRACTION_PROMPT
+                    ],
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.1
+                    )
                 )
-            )
-        except Exception as e:
-            err_msg = str(e)
-            if "404" in err_msg or "NOT_FOUND" in err_msg.upper():
+                model_used = model_candidate
+                break
+            except Exception as e:
+                err_msg = str(e)
+                last_error = e
+                # If high demand (503) or model unavailable (404), attempt fallback model
+                if "503" in err_msg or "UNAVAILABLE" in err_msg.upper() or "404" in err_msg or "NOT_FOUND" in err_msg.upper():
+                    continue
+                elif "401" in err_msg or "403" in err_msg or "API_KEY_INVALID" in err_msg.upper():
+                    raise AuthenticationError("Gemini API authentication failed. Please verify your GEMINI_API_KEY.")
+                elif "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg.upper():
+                    raise RateLimitError("Gemini API rate limit or quota exceeded. Please wait a moment before retrying.")
+                elif "TIMED_OUT" in err_msg.upper() or "TIMEOUT" in err_msg.upper():
+                    raise TimeoutError("Gemini Vision request timed out. Please retry with a clear image.")
+                else:
+                    raise OCRError(f"Gemini Vision call failed: {err_msg}")
+
+        if response is None:
+            err_msg = str(last_error) if last_error else "All Gemini model candidates failed"
+            if "503" in err_msg or "UNAVAILABLE" in err_msg.upper():
+                raise OCRError(f"Gemini Vision is currently experiencing temporary high demand: {err_msg}")
+            elif "404" in err_msg or "NOT_FOUND" in err_msg.upper():
                 raise ModelNotFoundError(
-                    f"Gemini model '{self.model_name}' is unavailable or deprecated: {err_msg}. "
-                    f"Recommended active model is '{DEFAULT_GEMINI_MODEL}'."
+                    f"Gemini models ({', '.join(candidate_models)}) are unavailable or deprecated: {err_msg}."
                 )
-            elif "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg.upper():
-                raise RateLimitError("Gemini API rate limit or quota exceeded. Please wait a moment before retrying.")
-            elif "401" in err_msg or "403" in err_msg or "API_KEY_INVALID" in err_msg.upper():
-                raise AuthenticationError("Gemini API authentication failed. Please verify your GEMINI_API_KEY.")
-            elif "TIMED_OUT" in err_msg.upper() or "TIMEOUT" in err_msg.upper():
-                raise TimeoutError("Gemini Vision request timed out. Please retry with a clear image.")
             else:
                 raise OCRError(f"Gemini Vision call failed: {err_msg}")
 
@@ -392,7 +416,7 @@ Return ONLY valid JSON matching this structure:
             validated = LabelExtractionResult.model_validate(parsed_json)
             result_dict = validated.model_dump()
             result_dict["is_simulated"] = False
-            result_dict["provider"] = self.model_name
+            result_dict["provider"] = model_used
             return result_dict
         except ValidationError as e:
             raise ModelParsingError(f"Model output failed schema validation: {str(e)}")
