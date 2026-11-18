@@ -353,7 +353,7 @@ Return ONLY valid JSON matching this structure:
         for attempt in range(3):
             attempts_executed = attempt + 1
             try:
-                client = genai.Client(api_key=self.api_key, http_options={"timeout": 25.0})
+                client = genai.Client(api_key=self.api_key, http_options={"timeout": 60.0})
                 response = client.models.generate_content(
                     model=self.model_name,
                     contents=[
@@ -384,7 +384,7 @@ Return ONLY valid JSON matching this structure:
                     raise AuthenticationError("Gemini API authentication failed. Please verify your GEMINI_API_KEY.")
                 elif "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg.upper():
                     raise RateLimitError("Gemini API rate limit or quota exceeded. Please wait a moment before retrying.")
-                elif "TIMED_OUT" in err_msg.upper() or "TIMEOUT" in err_msg.upper():
+                elif "timed out" in err_msg.lower() or "timeout" in err_msg.lower():
                     raise TimeoutError("Gemini Vision request timed out. Please retry with a clear image.")
                 else:
                     raise OCRError(f"Gemini Vision call failed: {err_msg}")
