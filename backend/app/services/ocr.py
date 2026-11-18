@@ -23,6 +23,20 @@ SUPPORTED_MIME_TYPES = {
 }
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB limit
 
+DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
+RETIRED_GEMINI_MODELS = {"gemini-2.5-flash", "models/gemini-2.5-flash"}
+
+def get_effective_gemini_model(model_name: Optional[str] = None) -> str:
+    """
+    Resolves the configured Gemini model variant.
+    Automatically migrates deprecated/retired models (such as gemini-2.5-flash)
+    to the active gemini-3.8-flash model.
+    """
+    raw_model = (model_name or os.environ.get("GEMINI_MODEL") or DEFAULT_GEMINI_MODEL).strip()
+    if raw_model in RETIRED_GEMINI_MODELS or "2.5" in raw_model:
+        return DEFAULT_GEMINI_MODEL
+    return raw_model
+
 
 # ==============================================================================
 # Custom Exceptions
@@ -50,6 +64,10 @@ class RateLimitError(OCRError):
 
 class AuthenticationError(OCRError):
     """Raised when Gemini API authentication fails."""
+    pass
+
+class ModelNotFoundError(OCRError):
+    """Raised when the requested Gemini model is deprecated, not found, or unavailable."""
     pass
 
 class TimeoutError(OCRError):
@@ -101,7 +119,7 @@ class LabelExtractionResult(BaseModel):
     uncertainty_notes: List[str] = []
     fields_needing_review: List[str] = []
     is_simulated: bool = False
-    provider: str = "gemini-2.5-flash"
+    provider: str = "gemini-3.8-flash"
     notice: Optional[str] = None
 
 
@@ -294,7 +312,7 @@ Return ONLY valid JSON matching this structure:
 
     def __init__(self, api_key: Optional[str] = None, model_name: Optional[str] = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-        self.model_name = model_name or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        self.model_name = get_effective_gemini_model(model_name)
 
     def extract_structured_data(self, image_data: str) -> Dict[str, Any]:
         """
@@ -304,6 +322,7 @@ Return ONLY valid JSON matching this structure:
         Raises:
             MissingAPIKeyError: If GEMINI_API_KEY is not configured.
             InvalidImageError: If the image cannot be decoded.
+            ModelNotFoundError: If requested model is deprecated or not found.
             RateLimitError: If API rate limits are hit.
             AuthenticationError: If API key is invalid.
             TimeoutError: If request times out.
@@ -340,7 +359,12 @@ Return ONLY valid JSON matching this structure:
             )
         except Exception as e:
             err_msg = str(e)
-            if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg.upper():
+            if "404" in err_msg or "NOT_FOUND" in err_msg.upper():
+                raise ModelNotFoundError(
+                    f"Gemini model '{self.model_name}' is unavailable or deprecated: {err_msg}. "
+                    f"Recommended active model is '{DEFAULT_GEMINI_MODEL}'."
+                )
+            elif "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg.upper():
                 raise RateLimitError("Gemini API rate limit or quota exceeded. Please wait a moment before retrying.")
             elif "401" in err_msg or "403" in err_msg or "API_KEY_INVALID" in err_msg.upper():
                 raise AuthenticationError("Gemini API authentication failed. Please verify your GEMINI_API_KEY.")

@@ -49,7 +49,7 @@ NutriForge operates on four core principles:
   - Persistent storage in database with in-memory caching.
 - **AI Food-Label OCR & Human Review**:
   - Multi-format packaging label image extraction (JPEG, PNG, WebP, GIF, HEIC up to 10 MB).
-  - Powered by Google Gen AI SDK (`gemini-2.5-flash`) with structured Pydantic schema validation.
+  - Powered by Google Gen AI SDK (`gemini-3.8-flash`) with structured Pydantic schema validation.
   - Zero-config **Simulated Demo Mode** for testing without an API key.
   - Visual highlight of uncertain fields (`fields_needing_review`) and observations (`uncertainty_notes`).
   - Full human-in-the-loop verification form to confirm or correct values before saving.
@@ -98,7 +98,7 @@ NutriForge operates on four core principles:
 | **Data Validation** | Pydantic v2 | Strict request/response schema modeling |
 | **Database & ORM** | SQLAlchemy 2.0+, SQLite, PostgreSQL | Multi-dialect database layer with auto-migration |
 | **PostgreSQL Driver** | Psycopg 3 (`psycopg[binary]`) | Production-tested Render database driver |
-| **Vision / AI** | Google Gen AI SDK (`google-genai`) | Model: `gemini-2.5-flash` for structured OCR |
+| **Vision / AI** | Google Gen AI SDK (`google-genai`) | Model: `gemini-3.8-flash` for structured OCR |
 | **Testing** | Pytest 9, HTTPX 0.28, AnyIO | 90 comprehensive backend tests |
 | **Linter & Quality** | Oxlint, TypeScript compiler (`tsc -b`) | Zero lint errors, type-safe frontend |
 
@@ -333,7 +333,7 @@ $$C_{\text{target}} = \left( \frac{33.0}{150.0} \right) \times 100 = 22.0\%$$
 | `DATABASE_URL` | No | `sqlite:///./nutriforge.db` | Database connection string. Supports SQLite and PostgreSQL (`postgresql://...`) |
 | `ALLOWED_ORIGINS` | No | `*` | Comma-separated list of allowed CORS origins or `*` |
 | `GEMINI_API_KEY` | Optional | Unset | Google AI Studio API key. When unset, API gracefully provides Simulated Demo Mode |
-| `GEMINI_MODEL` | No | `gemini-2.5-flash` | Gemini model variant used for Vision OCR extraction |
+| `GEMINI_MODEL` | No | `gemini-3.8-flash` | Gemini model variant used for Vision OCR extraction |
 
 ### Frontend Configuration (`frontend/.env`)
 

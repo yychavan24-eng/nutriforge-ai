@@ -25,8 +25,11 @@ from app.services.ocr import (
     MockOCRProvider,
     GeminiOCRProvider,
     get_ocr_provider,
+    get_effective_gemini_model,
+    DEFAULT_GEMINI_MODEL,
     InvalidImageError,
     MissingAPIKeyError,
+    ModelNotFoundError,
     RateLimitError,
     AuthenticationError,
     TimeoutError,
@@ -463,7 +466,7 @@ def check_allergens(request: AllergenCheckRequest):
 @app.get("/api/scan/status")
 def get_scan_status():
     has_key = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    model = get_effective_gemini_model()
     return {
         "gemini_configured": has_key,
         "model": model,
@@ -536,6 +539,13 @@ def scan_product(scan_data: ScanRequest):
             status_code=504,
             detail={"status": "error", "error_code": "TIMEOUT", "message": str(e)}
         )
+    except ModelNotFoundError as e:
+        return {
+            "status": "error",
+            "error_code": "MODEL_UNAVAILABLE",
+            "message": str(e),
+            "allow_demo_fallback": True
+        }
     except ModelParsingError as e:
         return {"status": "error", "error_code": "MODEL_PARSE_ERROR", "message": str(e)}
     except OCRError as e:

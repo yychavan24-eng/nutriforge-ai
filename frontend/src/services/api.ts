@@ -19,7 +19,13 @@ async function handleResponse<T>(res: Response): Promise<T> {
     let errorDetail = `Request failed with status ${res.status}`;
     try {
       const errorJson = await res.json();
-      errorDetail = errorJson.detail || errorJson.message || errorDetail;
+      if (typeof errorJson.detail === 'string') {
+        errorDetail = errorJson.detail;
+      } else if (errorJson.detail && typeof errorJson.detail === 'object') {
+        errorDetail = errorJson.detail.message || errorJson.detail.error_code || JSON.stringify(errorJson.detail);
+      } else if (errorJson.message) {
+        errorDetail = errorJson.message;
+      }
     } catch {
       // ignore json parse error on response
     }

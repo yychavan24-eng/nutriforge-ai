@@ -7,6 +7,7 @@ import {
   Camera as CameraIcon,
   CheckCircle,
   AlertTriangle,
+  AlertCircle,
   Info,
   Sparkles,
   HelpCircle,
@@ -39,6 +40,7 @@ export default function Scan() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successNotice, setSuccessNotice] = useState('');
   const [keyMissingNotice, setKeyMissingNotice] = useState(false);
+  const [modelUnavailableNotice, setModelUnavailableNotice] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [editedFields, setEditedFields] = useState<Set<string>>(new Set());
   const [scanStatus, setScanStatus] = useState<ScanStatus | null>(null);
@@ -213,6 +215,8 @@ export default function Scan() {
     setMode('upload');
     setErrorMsg('');
     setKeyMissingNotice(false);
+    setModelUnavailableNotice(false);
+    setModelUnavailableNotice(false);
 
     try {
       const data = await api.scanLabel(base64Data, false);
@@ -223,13 +227,32 @@ export default function Scan() {
       } else if (data.error_code === 'GEMINI_API_KEY_MISSING') {
         setErrorMsg(data.message || 'Gemini API key is not configured on the backend.');
         setKeyMissingNotice(true);
+        setScanStatus(prev => prev ? { ...prev, gemini_configured: false } : null);
+        setMode('select');
+      } else if (data.error_code === 'MODEL_UNAVAILABLE') {
+        setErrorMsg(data.message || 'Gemini Vision model is unavailable or deprecated.');
+        setModelUnavailableNotice(true);
+        setScanStatus(prev => prev ? { ...prev, gemini_configured: false } : null);
+        setMode('select');
+      } else if (data.error_code === 'AUTH_ERROR') {
+        setErrorMsg(data.message || 'Gemini API authentication failed. Please verify your GEMINI_API_KEY.');
+        setKeyMissingNotice(true);
+        setScanStatus(prev => prev ? { ...prev, gemini_configured: false } : null);
         setMode('select');
       } else {
         setErrorMsg(data.message || 'Failed to process label image.');
         setMode('select');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error contacting OCR service.');
+      const msg = err.message || 'Error contacting OCR service.';
+      setErrorMsg(msg);
+      if (msg.includes('404') || msg.includes('NOT_FOUND') || msg.includes('no longer available')) {
+        setModelUnavailableNotice(true);
+        setScanStatus(prev => prev ? { ...prev, gemini_configured: false } : null);
+      } else if (msg.includes('401') || msg.includes('403') || msg.includes('API_KEY_INVALID') || msg.includes('API key')) {
+        setKeyMissingNotice(true);
+        setScanStatus(prev => prev ? { ...prev, gemini_configured: false } : null);
+      }
       setMode('select');
     } finally {
       setLoading(false);
@@ -239,6 +262,9 @@ export default function Scan() {
   const handleCapturePhoto = async () => {
     setErrorMsg('');
     setSuccessNotice('');
+    setKeyMissingNotice(false);
+    setModelUnavailableNotice(false);
+    setFailedBarcode('');
 
     // If native Capacitor device, use Capacitor Camera plugin
     if (Capacitor.isNativePlatform()) {
@@ -273,6 +299,12 @@ export default function Scan() {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
 
+    setErrorMsg('');
+    setSuccessNotice('');
+    setKeyMissingNotice(false);
+    setModelUnavailableNotice(false);
+    setFailedBarcode('');
+
     if (file.size > 10 * 1024 * 1024) {
       setErrorMsg('File size exceeds the 10MB limit. Please upload a smaller image.');
       return;
@@ -298,6 +330,7 @@ export default function Scan() {
     setMode('upload');
     setErrorMsg('');
     setKeyMissingNotice(false);
+    setModelUnavailableNotice(false);
 
     try {
       const data = await api.scanLabel('simulated_image_bytes', true);
@@ -431,9 +464,17 @@ export default function Scan() {
 
         {/* OCR Engine & Open Food Facts Status Badges */}
         <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2">
-          {scanStatus?.gemini_configured ? (
+          {scanStatus === null ? (
+            <Badge variant="amber" size="sm" icon={<AlertCircle size={12} className="text-[#92400e]" />}>
+              Connecting to OCR Backend...
+            </Badge>
+          ) : scanStatus.gemini_configured && scanStatus.model && !scanStatus.model.includes('2.5') ? (
             <Badge variant="sage" size="sm" icon={<Sparkles size={12} className="text-[#183c27]" />}>
               Live Gemini Vision Active ({scanStatus.model})
+            </Badge>
+          ) : scanStatus.gemini_configured && scanStatus.model?.includes('2.5') ? (
+            <Badge variant="amber" size="sm" icon={<AlertTriangle size={12} className="text-[#b45309]" />}>
+              Gemini Model Deprecated ({scanStatus.model} — Backend Update Required)
             </Badge>
           ) : (
             <Badge variant="amber" size="sm" icon={<Info size={12} className="text-[#92400e]" />}>
@@ -895,6 +936,20 @@ export default function Scan() {
                       </code>
                       <p className="text-[11px] text-[#68796d]">
                         Or test instantly using the simulated demo button below without needing an external API key.
+                      </p>
+                    </div>
+                  )}
+                  {modelUnavailableNotice && (
+                    <div className="mt-2 text-xs text-[#4f5f53] bg-white/90 p-3 rounded-lg border border-[#fecdd3]">
+                      <p className="font-semibold text-[#171d18] mb-1">Gemini Vision Model Configuration:</p>
+                      <p className="text-[11px] text-[#68796d] mb-1.5">
+                        The requested Gemini model is unavailable or has been deprecated. NutriForge AI uses <strong>gemini-3.8-flash</strong>.
+                      </p>
+                      <code className="block bg-[#f6f4ee] p-1.5 rounded font-mono text-[11px] mb-1.5 text-[#122b1c]">
+                        GEMINI_MODEL=gemini-3.8-flash
+                      </code>
+                      <p className="text-[11px] text-[#68796d]">
+                        Set GEMINI_MODEL in your environment, or test instantly using Simulated Demo Mode.
                       </p>
                     </div>
                   )}

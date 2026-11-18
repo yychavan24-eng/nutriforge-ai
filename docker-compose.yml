@@ -29,7 +29,7 @@ services:
       - PORT=8000
       - DATABASE_URL=postgresql://nutriforge:nutriforge_password@db:5432/nutriforge
       - ALLOWED_ORIGINS=*
-      - GEMINI_MODEL=gemini-2.5-flash
+      - GEMINI_MODEL=gemini-3.8-flash
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       db:

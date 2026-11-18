@@ -19,7 +19,7 @@ services:
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: GEMINI_MODEL
-        value: gemini-2.5-flash
+        value: gemini-3.8-flash
       - key: GEMINI_API_KEY
         sync: false # Set manually in Render dashboard to keep secret
 

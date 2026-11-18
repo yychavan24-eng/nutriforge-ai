@@ -24,8 +24,11 @@ from app.services.ocr import (
     MockOCRProvider,
     GeminiOCRProvider,
     LabelExtractionResult,
+    get_effective_gemini_model,
+    DEFAULT_GEMINI_MODEL,
     InvalidImageError,
     MissingAPIKeyError,
+    ModelNotFoundError,
     RateLimitError,
     AuthenticationError,
     TimeoutError,
@@ -168,11 +171,11 @@ def test_gemini_provider_valid_structured_extraction(mock_client_cls):
     mock_response.text = json.dumps(sample_gemini_json)
     mock_client.models.generate_content.return_value = mock_response
 
-    provider = GeminiOCRProvider(api_key="mock_test_key_123", model_name="gemini-2.5-flash")
+    provider = GeminiOCRProvider(api_key="mock_test_key_123", model_name="gemini-3.8-flash")
     result = provider.extract_structured_data(VALID_PNG_DATA_URL)
 
     assert result["is_simulated"] is False
-    assert result["provider"] == "gemini-2.5-flash"
+    assert result["provider"] == "gemini-3.8-flash"
     assert result["name"] == "Whey Isolate Chocolate"
     assert result["protein"] == 24.0
     assert result["serving_size_value"] == 31.0
@@ -296,6 +299,24 @@ def test_gemini_provider_timeout_error(mock_client_cls):
     with pytest.raises(TimeoutError, match="timed out"):
         provider.extract_structured_data(VALID_PNG_DATA_URL)
 
+@patch("google.genai.Client")
+def test_gemini_provider_model_not_found_404_error(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client_cls.return_value = mock_client
+    mock_client.models.generate_content.side_effect = Exception("404 NOT_FOUND: models/gemini-old is no longer available to new users")
+
+    provider = GeminiOCRProvider(api_key="mock_test_key_123")
+    with pytest.raises(ModelNotFoundError, match="unavailable or deprecated"):
+        provider.extract_structured_data(VALID_PNG_DATA_URL)
+
+def test_gemini_model_legacy_remapping():
+    # Legacy/retired gemini-2.5-flash must automatically resolve to gemini-3.8-flash
+    assert get_effective_gemini_model("gemini-2.5-flash") == "gemini-3.8-flash"
+    assert get_effective_gemini_model("models/gemini-2.5-flash") == "gemini-3.8-flash"
+    assert get_effective_gemini_model() == "gemini-3.8-flash"
+    # Custom valid model names preserved
+    assert get_effective_gemini_model("gemini-1.5-pro") == "gemini-1.5-pro"
+
 
 # ==============================================================================
 # 8. API Endpoints Integration Tests (/api/scan/status & /api/scan)
@@ -348,6 +369,21 @@ def test_api_scan_unsupported_image_returns_400():
         assert resp.status_code == 400
         data = resp.json()
         assert "INVALID_IMAGE" in data["detail"]["error_code"]
+
+@patch("google.genai.Client")
+def test_api_scan_model_unavailable_returns_actionable_error(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client_cls.return_value = mock_client
+    mock_client.models.generate_content.side_effect = Exception("404 NOT_FOUND: models/gemini-old is no longer available to new users")
+
+    with patch.dict("os.environ", {"GEMINI_API_KEY": "valid_key"}):
+        resp = client.post("/api/scan", json={"image_data": VALID_PNG_DATA_URL})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "error"
+        assert data["error_code"] == "MODEL_UNAVAILABLE"
+        assert data["allow_demo_fallback"] is True
+        assert "gemini-3.8-flash" in data["message"]
 
 
 # ==============================================================================
