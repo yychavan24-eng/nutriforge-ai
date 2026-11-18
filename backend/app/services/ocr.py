@@ -10,6 +10,7 @@ import base64
 import json
 import os
 import re
+import time
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Tuple
 from pydantic import BaseModel, Field, ValidationError
@@ -25,7 +26,6 @@ MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB limit
 
 DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 RETIRED_GEMINI_MODELS = {"gemini-2.5-flash", "models/gemini-2.5-flash"}
-FALLBACK_GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"]
 
 def get_effective_gemini_model(model_name: Optional[str] = None) -> str:
     """
@@ -345,21 +345,15 @@ Return ONLY valid JSON matching this structure:
         except ImportError:
             raise OCRError("The 'google-genai' package is not installed. Please run: pip install google-genai")
 
-        # Candidate models with primary model first, followed by fallbacks for high-demand spikes
-        candidate_models = [self.model_name]
-        for fb in FALLBACK_GEMINI_MODELS:
-            if fb not in candidate_models:
-                candidate_models.append(fb)
-
         response = None
         last_error = None
-        model_used = self.model_name
 
-        for model_candidate in candidate_models:
+        # Execute extraction with exponential backoff on temporary 503 high-demand spikes
+        for attempt in range(3):
             try:
                 client = genai.Client(api_key=self.api_key)
                 response = client.models.generate_content(
-                    model=model_candidate,
+                    model=self.model_name,
                     contents=[
                         types.Part.from_bytes(data=raw_bytes, mime_type=mime_type),
                         self.EXTRACTION_PROMPT
@@ -369,14 +363,19 @@ Return ONLY valid JSON matching this structure:
                         temperature=0.1
                     )
                 )
-                model_used = model_candidate
                 break
             except Exception as e:
                 err_msg = str(e)
                 last_error = e
-                # If high demand (503) or model unavailable (404), attempt fallback model
-                if "503" in err_msg or "UNAVAILABLE" in err_msg.upper() or "404" in err_msg or "NOT_FOUND" in err_msg.upper():
+                # Temporary high demand 503: retry with exponential backoff
+                if ("503" in err_msg or "UNAVAILABLE" in err_msg.upper()) and attempt < 2:
+                    time.sleep(2 * (attempt + 1))
                     continue
+                elif "404" in err_msg or "NOT_FOUND" in err_msg.upper():
+                    raise ModelNotFoundError(
+                        f"Gemini model '{self.model_name}' is unavailable or deprecated: {err_msg}. "
+                        f"Recommended active model is '{DEFAULT_GEMINI_MODEL}'."
+                    )
                 elif "401" in err_msg or "403" in err_msg or "API_KEY_INVALID" in err_msg.upper():
                     raise AuthenticationError("Gemini API authentication failed. Please verify your GEMINI_API_KEY.")
                 elif "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg.upper():
@@ -387,15 +386,12 @@ Return ONLY valid JSON matching this structure:
                     raise OCRError(f"Gemini Vision call failed: {err_msg}")
 
         if response is None:
-            err_msg = str(last_error) if last_error else "All Gemini model candidates failed"
+            err_msg = str(last_error) if last_error else "Gemini Vision call failed"
             if "503" in err_msg or "UNAVAILABLE" in err_msg.upper():
-                raise OCRError(f"Gemini Vision is currently experiencing temporary high demand: {err_msg}")
-            elif "404" in err_msg or "NOT_FOUND" in err_msg.upper():
-                raise ModelNotFoundError(
-                    f"Gemini models ({', '.join(candidate_models)}) are unavailable or deprecated: {err_msg}."
+                raise OCRError(
+                    f"Gemini Vision model '{self.model_name}' is currently experiencing temporary high demand from Google. Please retry in a few moments."
                 )
-            else:
-                raise OCRError(f"Gemini Vision call failed: {err_msg}")
+            raise OCRError(f"Gemini Vision call failed: {err_msg}")
 
         if not response or not response.text:
             raise ModelParsingError("Gemini model returned an empty response.")
@@ -416,7 +412,7 @@ Return ONLY valid JSON matching this structure:
             validated = LabelExtractionResult.model_validate(parsed_json)
             result_dict = validated.model_dump()
             result_dict["is_simulated"] = False
-            result_dict["provider"] = model_used
+            result_dict["provider"] = self.model_name
             return result_dict
         except ValidationError as e:
             raise ModelParsingError(f"Model output failed schema validation: {str(e)}")
