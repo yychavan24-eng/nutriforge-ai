@@ -497,25 +497,16 @@ def verify_gemini_vision():
     try:
         from google import genai
         from google.genai import types
-        client = genai.Client(api_key=api_key, http_options={"timeout": 45.0})
 
-        # Test 1: List models (verifies API key authentication independently of generation)
-        model_names = []
-        try:
-            for m in client.models.list():
-                if hasattr(m, "name") and m.name:
-                    model_names.append(m.name)
-        except Exception as list_err:
-            model_names = [f"list_error: {str(list_err)}"]
-
-        # Test 2: Minimal ping generation on configured model
+        # Test 1: Minimal ping generation with standard client
+        gen_client = genai.Client(api_key=api_key)
         start_t = time.time()
         ping_response = None
         ping_error = None
         try:
-            resp = client.models.generate_content(
+            resp = gen_client.models.generate_content(
                 model=effective_model,
-                contents="Respond with the exact word 'PONG'",
+                contents="Say hello in one word",
                 config=types.GenerateContentConfig(max_output_tokens=10)
             )
             ping_response = resp.text.strip() if resp and resp.text else "OK"
@@ -523,17 +514,29 @@ def verify_gemini_vision():
             ping_error = str(gen_err)
         elapsed = round(time.time() - start_t, 2)
 
-        auth_success = ping_response is not None or any("gemini" in m.lower() for m in model_names)
+        # Test 2: List models to verify API key validity independently of generation
+        list_client = genai.Client(api_key=api_key)
+        model_names = []
+        list_error = None
+        try:
+            for m in list_client.models.list():
+                if hasattr(m, "name") and m.name:
+                    model_names.append(m.name)
+        except Exception as l_err:
+            list_error = str(l_err)
+
+        auth_success = ping_response is not None or len(model_names) > 0
 
         return {
             "key_present": True,
             "auth_status": "AUTHENTICATED" if auth_success else "FAILED",
             "effective_model": effective_model,
-            "models_available": [m for m in model_names if "flash" in m.lower() or "gemini" in m.lower()][:15],
             "ping_response": ping_response,
             "ping_error": ping_error,
             "latency_seconds": elapsed,
-            "message": f"Authentication {'succeeded' if auth_success else 'failed'}. Ping: {ping_response or ping_error}"
+            "list_error": list_error,
+            "models_available": [m.replace("models/", "") for m in model_names if "flash" in m.lower() or "gemini" in m.lower()][:15],
+            "message": f"Auth {'succeeded' if auth_success else 'failed'}. Ping: {ping_response or ping_error}"
         }
     except Exception as e:
         err_msg = str(e)
